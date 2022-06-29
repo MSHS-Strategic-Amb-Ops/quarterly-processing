@@ -179,11 +179,6 @@ utilization.data <- data.hour.scheduled %>%
          Appt.DateYear, Appt.MonthYear, Appt.Year, Appt.Week, Appt.Day, Appt.TM.Hr, holiday, util.type,
          timeOptionsHr_filter, sum, comparison, NPI)
 
-# Process and Format Utilization Data ------------------------------------------
-util_data_raw <- as.data.frame(read_rds(file.choose())) %>%
-  filter(Appt.Status == "Arrived") %>%
-  filter(Appt.DateYear <= Sys.Date())
-
 # Save Processed Utilization Data Raw on Server --------------------------------
 saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
 
