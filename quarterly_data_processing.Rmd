@@ -1,0 +1,220 @@
+---
+title: "quarterly-processing"
+output: html_document
+date: '2022-06-29'
+---
+
+```{r Load Packages, echo = FALSE, warning = FALSE, message = FALSE}
+# # Load packages -----------------------------------------------------------------------------------
+suppressMessages({
+  memory.limit(size = 10000000)
+  library(readxl)
+  library(writexl)
+  library(plyr)
+  library(dplyr)
+  library(data.table)
+  library(zoo)
+  library(shiny)
+  library(shinydashboard)
+  library(shinydashboardPlus)
+  library(shinyWidgets)
+  library(htmlwidgets)
+  library(lubridate)
+  library(tcltk)
+  library(tidyverse)
+  library(plotly)
+  library(knitr)
+  library(kableExtra)
+  library(leaflet)
+  library(grid)
+  library(gridExtra)
+  library(eeptools)
+  library(ggQC)
+  #library(zipcode)
+  library(utils)
+  library(scales)
+  library(chron)
+  library(bupaR)
+  library(shiny)
+  library(DT)
+  library(DiagrammeR)
+  library(shinyalert)
+  library(edeaR)
+  library(processmapR)
+  library(processmonitR)
+  library(processanimateR)
+  library(tidyr)
+  library(lubridate)
+  library(RColorBrewer)
+  library(DiagrammeR)
+  library(ggplot2)
+  library(leaflet)
+  library(readr)
+  library(highcharter)
+  library(ggforce) # for 'geom_arc_bar'
+  library(packcircles) # for packed circle graph
+  library(viridis)
+  library(ggiraph)
+  library(treemapify)
+  library(treemap)
+  library(broom)
+  library(extrafont)
+  library(tis) # for US holidays
+  library(vroom)
+  library(sjmisc)
+  library(tools)
+  library(here)
+  library(shinyBS)
+  library(shinyscreenshot)
+  library(fasttime)
+  library(shinycssloaders)
+  library(feather)
+  # library(zipcodeR)
+  library(formattable)
+  library(shinyjs)
+  library(janitor)
+  library(patchwork)
+  library(flexdashboard)
+  # library(tidyverse)
+  # library(viridis)
+  # library(hrbrthemes)
+  # library(plotly)
+  # install.packages("bsts")
+  library(bsts)
+  library(reactable)
+  # install.packages("reactablefmtr")
+  library(reactablefmtr)
+})
+
+```
+
+
+```{r Import Raw Scheduling Data, echo = FALSE, warning = FALSE, message = FALSE}
+
+scheduling_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")) %>%
+  filter(!is.na(Campus)) %>%
+  filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
+
+# scheduling_data_raw <- as.data.frame(readRDS(file.choose())) %>%
+#   filter(!is.na(Campus)) %>%
+#   filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
+
+```
+
+
+```{r Utilization Data Processing, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Create Utilizaiton Data Raw  -------------------------------------------------
+## Function for formatting date and time by hour
+system_date <- function(time){
+  result <- as.POSIXct(paste0(as.character(Sys.Date())," ",time), format="%Y-%m-%d %H:%M:%S")
+  return(result)
+}
+
+util.function <- function(time, df){
+  result <- ifelse(system_date(time) %within% df$time.interval == TRUE,
+                   ifelse(difftime(df$Appt.End.Time, system_date(time), units = "mins") >= 60, 60,
+                          as.numeric(difftime(df$Appt.End.Time, system_date(time), units = "mins"))),
+                   ifelse(floor_date(df$Appt.Start.Time, "hour") == system_date(time),
+                          ifelse(floor_date(df$Appt.End.Time, "hour") == system_date(time),
+                                 difftime(df$Appt.End.Time, df$Appt.Start.Time, units = "mins"),
+                                 difftime(system_date(time) + 60*60, df$Appt.Start.Time, units = "mins")), 0))
+  return(result)
+}
+
+
+## Pre-process Utilization by Hour based on Scheduled Appointment Times --------------------------------------------------
+data.hour.scheduled <- scheduling_data_raw %>% filter(Appt.Status == "Arrived")
+data.hour.scheduled$actual.visit.dur <- data.hour.scheduled$Appt.Dur * 1.2
+
+data.hour.scheduled$Appt.Start <- as.POSIXct(data.hour.scheduled$Appt.DTTM, format = "%H:%M")
+data.hour.scheduled$Appt.End <- as.POSIXct(data.hour.scheduled$Appt.Start + data.hour.scheduled$Appt.Dur*60, format = "%H:%M")
+
+data.hour.scheduled$Appt.Start.Time <- as.POSIXct(paste0(Sys.Date()," ", format(data.hour.scheduled$Appt.Start, format="%H:%M:%S")))
+data.hour.scheduled$Appt.End.Time <- as.POSIXct(paste0(Sys.Date()," ", format(data.hour.scheduled$Appt.End, format="%H:%M:%S")))
+
+data.hour.scheduled$time.interval <- interval(data.hour.scheduled$Appt.Start.Time, data.hour.scheduled$Appt.End.Time)
+
+data.hour.scheduled$`00:00` <- util.function("00:00:00", data.hour.scheduled)
+data.hour.scheduled$`01:00` <- util.function("01:00:00", data.hour.scheduled)
+data.hour.scheduled$`02:00` <- util.function("02:00:00", data.hour.scheduled)
+data.hour.scheduled$`03:00` <- util.function("03:00:00", data.hour.scheduled)
+data.hour.scheduled$`04:00` <- util.function("04:00:00", data.hour.scheduled)
+data.hour.scheduled$`05:00` <- util.function("05:00:00", data.hour.scheduled)
+data.hour.scheduled$`06:00` <- util.function("06:00:00", data.hour.scheduled)
+data.hour.scheduled$`07:00` <- util.function("07:00:00", data.hour.scheduled)
+data.hour.scheduled$`08:00` <- util.function("08:00:00", data.hour.scheduled)
+data.hour.scheduled$`09:00` <- util.function("09:00:00", data.hour.scheduled)
+data.hour.scheduled$`10:00` <- util.function("10:00:00", data.hour.scheduled)
+data.hour.scheduled$`11:00` <- util.function("11:00:00", data.hour.scheduled)
+data.hour.scheduled$`12:00` <- util.function("12:00:00", data.hour.scheduled)
+data.hour.scheduled$`13:00` <- util.function("13:00:00", data.hour.scheduled)
+data.hour.scheduled$`14:00` <- util.function("14:00:00", data.hour.scheduled)
+data.hour.scheduled$`15:00` <- util.function("15:00:00", data.hour.scheduled)
+data.hour.scheduled$`16:00` <- util.function("16:00:00", data.hour.scheduled)
+data.hour.scheduled$`17:00` <- util.function("17:00:00", data.hour.scheduled)
+data.hour.scheduled$`18:00` <- util.function("18:00:00", data.hour.scheduled)
+data.hour.scheduled$`19:00` <- util.function("19:00:00", data.hour.scheduled)
+data.hour.scheduled$`20:00` <- util.function("20:00:00", data.hour.scheduled)
+data.hour.scheduled$`21:00` <- util.function("21:00:00", data.hour.scheduled)
+data.hour.scheduled$`22:00` <- util.function("22:00:00", data.hour.scheduled)
+data.hour.scheduled$`23:00` <- util.function("23:00:00", data.hour.scheduled)
+
+# Data Validation
+# data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):which(colnames(data.hour.scheduled)=="23:00")])
+# data.hour.scheduled$actual <- as.numeric(difftime(data.hour.scheduled$Appt.End.Time, data.hour.scheduled$Appt.Start.Time, units = "mins"))
+# data.hour.scheduled$comparison <- ifelse(data.hour.scheduled$sum ==data.hour.scheduled$actual, 0, 1)
+# data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
+
+# Format utilization 
+data.hour.scheduled$util.type <- "scheduled"
+
+timeOptionsHr_filter <- c("07:00","08:00","09:00",
+                          "10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00",
+                          "20:00") ## Time Range by Hour Filter
+
+utilization.data <- utilization.data %>%
+  select(Campus, Campus.Specialty, Department, Resource, Provider,
+         Visit.Method, Appt.Type, Appt.Status,
+         Appt.DateYear, Appt.MonthYear, Appt.Year, Appt.Week, Appt.Day, Appt.TM.Hr, holiday, util.type,
+         timeOptionsHr_filter, sum, comparison, NPI)
+
+# Process and Format Utilization Data ------------------------------------------
+util_data_raw <- as.data.frame(read_rds(file.choose())) %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= Sys.Date())
+
+# Save Processed Utilization Data Raw on Server --------------------------------
+saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
+
+```
+
+
+# ```{r Import Full Utilization Data, echo = FALSE, warning = FALSE, message = FALSE}
+# 
+# util_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds"))
+# 
+# util_data_raw <- util_data_raw %>%
+#   mutate(Appt.YearQtr = as.yearqtr(Appt.DateYear),
+#          Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM') ) 
+# ```
+# 
+# 
+# ```{r Scheduling Data Processing, echo = FALSE, warning = FALSE, message = FALSE}
+# 
+# scheduling_data_raw <- scheduling_data_raw %>%
+#   mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
+#          Appt.YearQtr = as.yearqtr(Appt.DTTM),
+#          Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
+#          Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'),
+#          New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'),
+#          Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"),
+#          Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"),
+#          Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"),
+#          Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
+#          Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
+# 
+# ```
+
+
+
