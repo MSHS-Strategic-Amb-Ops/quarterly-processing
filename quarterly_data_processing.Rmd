@@ -84,7 +84,7 @@ suppressMessages({
   library(reactable)
   # install.packages("reactablefmtr")
   library(reactablefmtr)
-  library(svDialogs)
+  # library(svDialogs)
   library(openxlsx)
   library(flextable)
   library(officedown)
