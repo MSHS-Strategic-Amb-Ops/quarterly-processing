@@ -136,7 +136,7 @@ util.function <- function(time, df){
 ## Pre-process Utilization by Hour based on Scheduled Appointment Times --------------------------------------------------
 data.hour.scheduled <- scheduling_data_raw %>% 
   filter(Appt.Status == "Arrived") %>%
-  filter(Appt.DateYear <= max(Appt.Made.DateYear))
+  filter(Appt.DateYear < Sys.time())
 
 data.hour.scheduled$actual.visit.dur <- data.hour.scheduled$Appt.Dur * 1.2 # 20% Adjustment Factor
 
