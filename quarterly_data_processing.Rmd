@@ -7,7 +7,7 @@ date: '2022-06-29'
 ```{r Load Packages, echo = FALSE, warning = FALSE, message = FALSE}
 # # Load packages -----------------------------------------------------------------------------------
 suppressMessages({
-  memory.limit(size = 10000000)
+  memory.limit(size = 8000000)
   library(readxl)
   library(writexl)
   library(plyr)
@@ -30,7 +30,7 @@ suppressMessages({
   library(gridExtra)
   library(eeptools)
   library(ggQC)
-  #library(zipcode)
+  library(zipcodeR)
   library(utils)
   library(scales)
   library(chron)
@@ -84,7 +84,17 @@ suppressMessages({
   library(reactable)
   # install.packages("reactablefmtr")
   library(reactablefmtr)
+  library(svDialogs)
+  library(openxlsx)
+  library(flextable)
+  library(officedown)
+  library(officer)
+  library(magrittr)
+  library(webshot) 
+  library(png)
+  library(ggh4x)
 })
+
 
 ```
 
@@ -124,7 +134,10 @@ util.function <- function(time, df){
 
 
 ## Pre-process Utilization by Hour based on Scheduled Appointment Times --------------------------------------------------
-data.hour.scheduled <- scheduling_data_raw %>% filter(Appt.Status == "Arrived")
+data.hour.scheduled <- scheduling_data_raw %>% 
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear))
+
 data.hour.scheduled$actual.visit.dur <- data.hour.scheduled$Appt.Dur * 1.2 # 20% Adjustment Factor
 
 data.hour.scheduled$Appt.Start <- as.POSIXct(data.hour.scheduled$Appt.DTTM, format = "%H:%M")
@@ -161,10 +174,10 @@ data.hour.scheduled$`22:00` <- util.function("22:00:00", data.hour.scheduled)
 data.hour.scheduled$`23:00` <- util.function("23:00:00", data.hour.scheduled)
 
 # Data Validation
-# data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):which(colnames(data.hour.scheduled)=="23:00")])
-# data.hour.scheduled$actual <- as.numeric(difftime(data.hour.scheduled$Appt.End.Time, data.hour.scheduled$Appt.Start.Time, units = "mins"))
-# data.hour.scheduled$comparison <- ifelse(data.hour.scheduled$sum ==data.hour.scheduled$actual, 0, 1)
-# data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
+data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):which(colnames(data.hour.scheduled)=="23:00")])
+data.hour.scheduled$actual <- as.numeric(difftime(data.hour.scheduled$Appt.End.Time, data.hour.scheduled$Appt.Start.Time, units = "mins"))
+data.hour.scheduled$comparison <- ifelse(data.hour.scheduled$sum ==data.hour.scheduled$actual, 0, 1)
+data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
 
 # Format utilization 
 data.hour.scheduled$util.type <- "scheduled"
@@ -191,14 +204,17 @@ saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_ut
 
 <!-- util_data_raw <- util_data_raw %>% -->
 <!--   mutate(Appt.YearQtr = as.yearqtr(Appt.DateYear), -->
-<!--          Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM') )  -->
+<!--          Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM') ) -->
 <!-- ``` -->
 
 
 <!-- ```{r Import Mapping Files, echo = FALSE, warning = FALSE, message = FALSE} -->
 
-<!-- dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv") # Epic Department Zip Code  -->
-<!-- visitPlan <- read_csv("/nfs/data/Applications/Ambulatory/Visit Plans.csv") -->
+<!-- dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv") # Epic Department Zip Code -->
+<!-- visitPlan <- read_csv("/nfs/data/Applications/Ambulatory/Visit Plans.csv") # Epic Visit Plan Grouping -->
+
+<!-- dept_zip_code_ref <- read_csv(file.choose()) # Epic Department Zip Code -->
+<!-- visitPlan <- read_csv(file.choose()) # Epic Visit Plan Grouping -->
 
 <!-- ``` -->
 
@@ -230,7 +246,7 @@ saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_ut
 <!--   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")), -->
 <!--          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>% -->
 <!--   group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>% -->
-<!--   summarise(monthly_vol = n())  -->
+<!--   summarise(monthly_vol = n()) -->
 
 <!-- # # Merge with Rad Onc and Radiology Data -->
 <!-- # monthly_vol <- bind_rows(monthly_vol, rad_radOnc_data) -->
@@ -238,7 +254,7 @@ saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_ut
 <!-- monthly_vol <- monthly_vol %>% -->
 <!--   # dplyr::select(-Month) %>% -->
 <!--   pivot_wider( -->
-<!--     names_from = Visit.Method,  -->
+<!--     names_from = Visit.Method, -->
 <!--     values_from = monthly_vol, -->
 <!--     values_fill=list(monthly_vol=0) -->
 <!--   ) %>% -->
@@ -252,17 +268,17 @@ saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_ut
 
 <!-- ## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol -->
 <!-- vol_zip_code <- scheduling_data_raw %>% -->
-<!--   filter(Appt.Status == "Arrived") %>% -->
-<!--   filter(Appt.DateYear < Sys.Date())  -->
+<!--    filter(Appt.Status == "Arrived") %>% -->
+<!--   filter(Appt.DateYear <= max(Appt.Made.DateYear)) -->
 
-<!-- vol_zip_code$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code$Department, dept_zip_code_ref$`Department Name`)]  -->
+<!-- vol_zip_code$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code$Department, dept_zip_code_ref$`Department Name`)] -->
 <!-- coordinates <- geocode_zip(vol_zip_code$dept_zip_code) -->
 <!-- vol_zip_code <- merge(vol_zip_code, coordinates, by.x = c("dept_zip_code"), by.y = c("zipcode"), all.x = TRUE) -->
 
 <!-- vol_zip_code <- vol_zip_code %>% -->
 <!--   group_by(Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lng) %>% -->
 <!--   summarise(total_vol = n()) %>% -->
-<!--   mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))  -->
+<!--   mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code))) -->
 
 <!-- ``` -->
 
@@ -271,11 +287,14 @@ saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_ut
 
 <!-- ``` -->
 
+
 <!-- ```{r Output Pre Calulated Data to Server, echo = FALSE, warning = FALSE, message = FALSE} -->
 
 <!-- # Volume Tables ---------------------------------------------------------------- -->
 <!-- ## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol -->
 <!-- saveRDS(monthly_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_volume_tbl.rds") -->
+<!-- ## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol -->
+<!-- saveRDS(vol_zip_code, "/nfs/data/Applications/Ambulatory/Quarterly_Data/vol_zipCode_tbl.rds") -->
 
 <!-- ``` -->
 
