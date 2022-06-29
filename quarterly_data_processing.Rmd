@@ -193,7 +193,7 @@ utilization.data <- data.hour.scheduled %>%
          timeOptionsHr_filter, sum, comparison, NPI)
 
 # Save Processed Utilization Data Raw on Server --------------------------------
-saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
+saveRDS(utilization.data, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
 
 ```
 
