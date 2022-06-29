@@ -105,9 +105,9 @@ scheduling_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/
   filter(!is.na(Campus)) %>%
   filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
 
-scheduling_data_raw <- as.data.frame(readRDS(file.choose())) %>%
-  filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
+# scheduling_data_raw <- as.data.frame(readRDS(file.choose())) %>%
+#   filter(!is.na(Campus)) %>%
+#   filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
 
 ```
 
@@ -187,115 +187,178 @@ timeOptionsHr_filter <- c("07:00","08:00","09:00",
                           "20:00") ## Time Range by Hour Filter
 
 utilization.data <- data.hour.scheduled %>%
-  select(Campus, Campus.Specialty, Department, Resource, Provider,
+  dplyr::select(Campus, Campus.Specialty, Department, Resource, Provider,
          Visit.Method, Appt.Type, Appt.Status,
          Appt.DateYear, Appt.MonthYear, Appt.Year, Appt.Week, Appt.Day, Appt.TM.Hr, holiday, util.type,
          timeOptionsHr_filter, sum, comparison, NPI)
 
 # Save Processed Utilization Data Raw on Server --------------------------------
-# saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
+saveRDS(util_data_raw, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
 
 ```
 
 
-```{r Import Full Utilization Data, echo = FALSE, warning = FALSE, message = FALSE}
+<!-- ```{r Import Full Utilization Data, echo = FALSE, warning = FALSE, message = FALSE} -->
 
-util_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds"))
+<!-- util_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")) -->
 
-util_data_raw <- util_data_raw %>%
-  mutate(Appt.YearQtr = as.yearqtr(Appt.DateYear),
-         Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM') )
-```
-
-
-```{r Import Mapping Files, echo = FALSE, warning = FALSE, message = FALSE}
-
-dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv") # Epic Department Zip Code
-visitPlan <- read_csv("/nfs/data/Applications/Ambulatory/Visit Plans.csv") # Epic Visit Plan Grouping
-
-dept_zip_code_ref <- read_csv(file.choose()) # Epic Department Zip Code
-visitPlan <- read_csv(file.choose()) # Epic Visit Plan Grouping
-
-```
+<!-- util_data_raw <- util_data_raw %>% -->
+<!--   mutate(Appt.YearQtr = as.yearqtr(Appt.DateYear), -->
+<!--          Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM') ) -->
+<!-- ``` -->
 
 
-```{r Scheduling Data Processing, echo = FALSE, warning = FALSE, message = FALSE}
+<!-- ```{r Import Mapping Files, echo = FALSE, warning = FALSE, message = FALSE} -->
 
-scheduling_data_raw <- scheduling_data_raw %>%
-  mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
-         Appt.YearQtr = as.yearqtr(Appt.DTTM),
-         Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
-         Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'),
-         New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'),
-         Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"),
-         Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"),
-         Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"),
-         Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
-         Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
+<!-- dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv") # Epic Department Zip Code -->
+<!-- visitPlan <- read_csv("/nfs/data/Applications/Ambulatory/Visit Plans.csv") # Epic Visit Plan Grouping -->
 
-```
+<!-- dept_zip_code_ref <- read_csv(file.choose()) # Epic Department Zip Code -->
+<!-- visitPlan <- read_csv(file.choose()) # Epic Visit Plan Grouping -->
+
+<!-- ``` -->
 
 
-```{r Volume Tables, echo = FALSE, warning = FALSE, message = FALSE}
+<!-- ```{r Scheduling Data Processing, echo = FALSE, warning = FALSE, message = FALSE} -->
 
-# Volume Tables ----------------------------------------------------------------
-## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
-monthly_vol <- scheduling_data_raw %>%
-  filter(Appt.Status == "Arrived") %>%
-  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
-  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
-         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
-  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>%
-  summarise(monthly_vol = n())
+<!-- scheduling_data_raw <- scheduling_data_raw %>% -->
+<!--   mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear), -->
+<!--          Appt.YearQtr = as.yearqtr(Appt.DTTM), -->
+<!--          Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM), -->
+<!--          Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'), -->
+<!--          New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'), -->
+<!--          Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"), -->
+<!--          Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"), -->
+<!--          Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"), -->
+<!--          Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")), -->
+<!--          Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') ) -->
 
-# # Merge with Rad Onc and Radiology Data
-# monthly_vol <- bind_rows(monthly_vol, rad_radOnc_data)
-
-monthly_vol <- monthly_vol %>%
-  # dplyr::select(-Month) %>%
-  pivot_wider(
-    names_from = Visit.Method,
-    values_from = monthly_vol,
-    values_fill=list(monthly_vol=0)
-  ) %>%
-  mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>%
-  pivot_longer(
-    7:9,
-    names_to = "Visit.Method",
-    values_to = "monthly_vol"
-  )
+<!-- ``` -->
 
 
-## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
-vol_zip_code <- scheduling_data_raw %>%
-   filter(Appt.Status == "Arrived") %>%
-  filter(Appt.DateYear <= max(Appt.Made.DateYear))
+<!-- ```{r Volume Tables, echo = FALSE, warning = FALSE, message = FALSE} -->
 
-vol_zip_code$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code$Department, dept_zip_code_ref$`Department Name`)]
-coordinates <- geocode_zip(vol_zip_code$dept_zip_code)
-vol_zip_code <- merge(vol_zip_code, coordinates, by.x = c("dept_zip_code"), by.y = c("zipcode"), all.x = TRUE)
+<!-- # Volume Tables ---------------------------------------------------------------- -->
+<!-- ## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol -->
+<!-- monthly_vol <- scheduling_data_raw %>% -->
+<!--   filter(Appt.Status == "Arrived") %>% -->
+<!--   filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>% -->
+<!--   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")), -->
+<!--          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>% -->
+<!--   group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>% -->
+<!--   summarise(monthly_vol = n()) -->
 
-vol_zip_code <- vol_zip_code %>%
-  group_by(Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lng) %>%
-  summarise(total_vol = n()) %>%
-  mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))
+<!-- # # Merge with Rad Onc and Radiology Data -->
+<!-- # monthly_vol <- bind_rows(monthly_vol, rad_radOnc_data) -->
 
-```
+<!-- monthly_vol <- monthly_vol %>% -->
+<!--   # dplyr::select(-Month) %>% -->
+<!--   pivot_wider( -->
+<!--     names_from = Visit.Method, -->
+<!--     values_from = monthly_vol, -->
+<!--     values_fill=list(monthly_vol=0) -->
+<!--   ) %>% -->
+<!--   mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>% -->
+<!--   pivot_longer( -->
+<!--     7:9, -->
+<!--     names_to = "Visit.Method", -->
+<!--     values_to = "monthly_vol" -->
+<!--   ) -->
 
 
-```{r }
+<!-- ## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol -->
+<!-- vol_zip_code <- scheduling_data_raw %>% -->
+<!--    filter(Appt.Status == "Arrived") %>% -->
+<!--   filter(Appt.DateYear <= max(Appt.Made.DateYear)) -->
 
-```
+<!-- vol_zip_code$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code$Department, dept_zip_code_ref$`Department Name`)] -->
+<!-- coordinates <- geocode_zip(vol_zip_code$dept_zip_code) -->
+<!-- vol_zip_code <- merge(vol_zip_code, coordinates, by.x = c("dept_zip_code"), by.y = c("zipcode"), all.x = TRUE) -->
+
+<!-- vol_zip_code <- vol_zip_code %>% -->
+<!--   group_by(Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lng) %>% -->
+<!--   summarise(total_vol = n()) %>% -->
+<!--   mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code))) -->
+
+<!-- ``` -->
 
 
-```{r Output Pre Calulated Data to Server, echo = FALSE, warning = FALSE, message = FALSE}
+<!-- ```{r Access Tables, echo = FALSE, warning = FALSE, message = FALSE} -->
 
-# Volume Tables ----------------------------------------------------------------
-## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
-saveRDS(monthly_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_volume_tbl.rds")
-## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
-saveRDS(vol_zip_code, "/nfs/data/Applications/Ambulatory/Quarterly_Data/vol_zipCode_tbl.rds")
+<!-- # Access Tables ---------------------------------------------------------------- -->
+<!-- ## New Patient Wait Time Horizon =============================================== -->
+<!-- waitTime_dist_specialty <- scheduling_data_raw %>% -->
+<!--   filter(Wait.Time >= 0) %>% -->
+<!--   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7", -->
+<!--                            Wait.Time >7 & Wait.Time <=14 ~ "8-14", -->
+<!--                            Wait.Time >14 & Wait.Time <=30 ~ "15-30", -->
+<!--                            TRUE ~ ">30")) %>% -->
+<!--   group_by(Campus.Specialty, Appt.Made.YearQtr, New.PT3, Visit.Method, group) %>% -->
+<!--   summarise(total = n()) -->
 
-```
+<!-- ## Median Wait Time ============================================================ -->
+<!-- ### By Specialty  -->
+<!-- waitTime_mshs <- scheduling_data_raw %>% -->
+<!--   filter(Wait.Time >= 0) %>% -->
+<!--   group_by(Campus.Specialty, Appt.Made.YearQtr, New.PT3) %>% -->
+<!--   summarise(med_wait = median(Wait.Time, na.rm = TRUE))  -->
+
+<!-- ### By Specialty and Site -->
+<!-- waitTime_site <- scheduling_data_raw %>% -->
+<!--   filter(Wait.Time >= 0) %>% -->
+<!--   group_by(Campus.Specialty, Appt.Made.YearQtr, Campus, New.PT3) %>% -->
+<!--   summarise(med_wait = median(Wait.Time, na.rm = TRUE)) -->
+
+<!-- ### By Specialty and Provider  -->
+<!-- waitTime_prov <- scheduling_data_raw %>% -->
+<!--     filter(Appt.Made.YearQtr %in% c(data_quarters[length(data_quarters)])) %>% -->
+<!--     filter(Wait.Time >= 0) %>% -->
+<!--     filter(New.PT3 == "New") %>% -->
+<!--     group_by(Campus.Specialty, Appt.Made.YearQtr, Provider, NPI) %>% -->
+<!--     summarise(med_wait = as.numeric(median(Wait.Time, na.rm = TRUE))) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r Average Weekday Volume Tables, echo = FALSE, warning = FALSE, message = FALSE} -->
+
+<!-- ``` -->
+
+
+<!-- ```{r Volume Target Variance Tables, echo = FALSE, warning = FALSE, message = FALSE} -->
+
+<!-- ``` -->
+
+
+<!-- ```{r Utilization by Turns Tables, echo = FALSE, warning = FALSE, message = FALSE} -->
+
+<!-- ``` -->
+
+
+<!-- ```{r Utilization by Durations Tables, echo = FALSE, warning = FALSE, message = FALSE} -->
+
+<!-- ``` -->
+
+
+<!-- ```{r Output Pre Calulated Data to Server, echo = FALSE, warning = FALSE, message = FALSE} -->
+
+<!-- # Volume Tables ---------------------------------------------------------------- -->
+<!-- ## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol -->
+<!-- saveRDS(monthly_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_volume_tbl.rds") -->
+<!-- ## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol -->
+<!-- saveRDS(vol_zip_code, "/nfs/data/Applications/Ambulatory/Quarterly_Data/vol_zipCode_tbl.rds") -->
+
+<!-- # Access Tables ---------------------------------------------------------------- -->
+<!-- ## Wait Time Horizon by Specialty  -->
+<!-- saveRDS(waitTime_dist_specialty, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_dist_specialty_tbl.rds") -->
+<!-- ## Median Wait Time  -->
+<!-- saveRDS(waitTime_mshs, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_mshs_tbl.rds") # By MSHS Specialty (Exc. MSDD and Network) -->
+<!-- saveRDS(waitTime_site, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_site_tbl.rds") # By Specialty and Site -->
+<!-- saveRDS(waitTime_prov, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_prov_tbl.rds") # By Specialty and Provider -->
+
+
+
+
+<!-- ``` -->
 
 
