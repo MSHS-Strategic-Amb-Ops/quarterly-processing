@@ -1,0 +1,410 @@
+---
+title: "quarterly-processing"
+output: html_document
+date: '2022-06-29'
+---
+
+```{r Load Packages, echo = FALSE, warning = FALSE, message = FALSE}
+# # Load packages -----------------------------------------------------------------------------------
+suppressMessages({
+  memory.limit(size = 8000000)
+  library(readxl)
+  library(writexl)
+  library(plyr)
+  library(dplyr)
+  library(data.table)
+  library(zoo)
+  library(shiny)
+  library(shinydashboard)
+  library(shinydashboardPlus)
+  library(shinyWidgets)
+  library(htmlwidgets)
+  library(lubridate)
+  library(tcltk)
+  library(tidyverse)
+  library(plotly)
+  library(knitr)
+  library(kableExtra)
+  library(leaflet)
+  library(grid)
+  library(gridExtra)
+  library(eeptools)
+  library(ggQC)
+  library(zipcodeR)
+  library(utils)
+  library(scales)
+  library(chron)
+  library(bupaR)
+  library(shiny)
+  library(DT)
+  library(DiagrammeR)
+  library(shinyalert)
+  library(edeaR)
+  library(processmapR)
+  library(processmonitR)
+  library(processanimateR)
+  library(tidyr)
+  library(lubridate)
+  library(RColorBrewer)
+  library(DiagrammeR)
+  library(ggplot2)
+  library(leaflet)
+  library(readr)
+  library(highcharter)
+  library(ggforce) # for 'geom_arc_bar'
+  library(packcircles) # for packed circle graph
+  library(viridis)
+  library(ggiraph)
+  library(treemapify)
+  library(treemap)
+  library(broom)
+  library(extrafont)
+  library(tis) # for US holidays
+  library(vroom)
+  library(sjmisc)
+  library(tools)
+  library(here)
+  library(shinyBS)
+  library(shinyscreenshot)
+  library(fasttime)
+  library(shinycssloaders)
+  library(feather)
+  # library(zipcodeR)
+  library(formattable)
+  library(shinyjs)
+  library(janitor)
+  library(patchwork)
+  library(flexdashboard)
+  # library(tidyverse)
+  # library(viridis)
+  # library(hrbrthemes)
+  # library(plotly)
+  # install.packages("bsts")
+  library(bsts)
+  library(reactable)
+  # install.packages("reactablefmtr")
+  library(reactablefmtr)
+  library(svDialogs)
+  library(openxlsx)
+  library(flextable)
+  library(officedown)
+  library(officer)
+  library(magrittr)
+  library(webshot) 
+  library(png)
+  library(ggh4x)
+})
+
+
+```
+
+
+```{r Processing Variables, echo = FALSE, warning = FALSE, message = FALSE}
+
+current_quarter <- "2022 Q2"
+
+```
+
+
+```{r Import Raw Scheduling Data, echo = FALSE, warning = FALSE, message = FALSE}
+
+scheduling_data_raw <- as.data.frame(readRDS(file.choose())) %>%
+  filter(!is.na(Campus)) %>%
+  filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) 
+
+scheduling_data_raw <- scheduling_data_raw %>% 
+  mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
+         Appt.YearQtr = as.yearqtr(Appt.DTTM),
+         Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
+         Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'),
+         New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'),
+         Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"),
+         Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"),
+         Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"),
+         Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
+         Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
+
+```
+
+
+```{r Utilization Data Processing, echo = FALSE, warning = FALSE, message = FALSE}
+
+# # Create Utilizaiton Data Raw  -------------------------------------------------
+# ## Function for formatting date and time by hour
+# system_date <- function(time){
+#   result <- as.POSIXct(paste0(as.character(Sys.Date())," ",time), format="%Y-%m-%d %H:%M:%S")
+#   return(result)
+# }
+# 
+# util.function <- function(time, df){
+#   result <- ifelse(system_date(time) %within% df$time.interval == TRUE,
+#                    ifelse(difftime(df$Appt.End.Time, system_date(time), units = "mins") >= 60, 60,
+#                           as.numeric(difftime(df$Appt.End.Time, system_date(time), units = "mins"))),
+#                    ifelse(floor_date(df$Appt.Start.Time, "hour") == system_date(time),
+#                           ifelse(floor_date(df$Appt.End.Time, "hour") == system_date(time),
+#                                  difftime(df$Appt.End.Time, df$Appt.Start.Time, units = "mins"),
+#                                  difftime(system_date(time) + 60*60, df$Appt.Start.Time, units = "mins")), 0))
+#   return(result)
+# }
+# 
+# 
+# ## Pre-process Utilization by Hour based on Scheduled Appointment Times --------------------------------------------------
+# data.hour.scheduled <- scheduling_data_raw %>%
+#   filter(Appt.Status == "Arrived") %>%
+#   filter(Appt.DateYear <= max(Appt.Made.DTTM))
+# 
+# data.hour.scheduled$actual.visit.dur <- data.hour.scheduled$Appt.Dur * 1.2 # 20% Adjustment Factor
+# 
+# data.hour.scheduled$Appt.Start <- as.POSIXct(data.hour.scheduled$Appt.DTTM, format = "%H:%M")
+# data.hour.scheduled$Appt.End <- as.POSIXct(data.hour.scheduled$Appt.Start + data.hour.scheduled$Appt.Dur*60, format = "%H:%M")
+# 
+# data.hour.scheduled$Appt.Start.Time <- as.POSIXct(paste0(Sys.Date()," ", format(data.hour.scheduled$Appt.Start, format="%H:%M:%S")))
+# data.hour.scheduled$Appt.End.Time <- as.POSIXct(paste0(Sys.Date()," ", format(data.hour.scheduled$Appt.End, format="%H:%M:%S")))
+# 
+# data.hour.scheduled$time.interval <- interval(data.hour.scheduled$Appt.Start.Time, data.hour.scheduled$Appt.End.Time)
+# 
+# data.hour.scheduled$`00:00` <- util.function("00:00:00", data.hour.scheduled)
+# data.hour.scheduled$`01:00` <- util.function("01:00:00", data.hour.scheduled)
+# data.hour.scheduled$`02:00` <- util.function("02:00:00", data.hour.scheduled)
+# data.hour.scheduled$`03:00` <- util.function("03:00:00", data.hour.scheduled)
+# data.hour.scheduled$`04:00` <- util.function("04:00:00", data.hour.scheduled)
+# data.hour.scheduled$`05:00` <- util.function("05:00:00", data.hour.scheduled)
+# data.hour.scheduled$`06:00` <- util.function("06:00:00", data.hour.scheduled)
+# data.hour.scheduled$`07:00` <- util.function("07:00:00", data.hour.scheduled)
+# data.hour.scheduled$`08:00` <- util.function("08:00:00", data.hour.scheduled)
+# data.hour.scheduled$`09:00` <- util.function("09:00:00", data.hour.scheduled)
+# data.hour.scheduled$`10:00` <- util.function("10:00:00", data.hour.scheduled)
+# data.hour.scheduled$`11:00` <- util.function("11:00:00", data.hour.scheduled)
+# data.hour.scheduled$`12:00` <- util.function("12:00:00", data.hour.scheduled)
+# data.hour.scheduled$`13:00` <- util.function("13:00:00", data.hour.scheduled)
+# data.hour.scheduled$`14:00` <- util.function("14:00:00", data.hour.scheduled)
+# data.hour.scheduled$`15:00` <- util.function("15:00:00", data.hour.scheduled)
+# data.hour.scheduled$`16:00` <- util.function("16:00:00", data.hour.scheduled)
+# data.hour.scheduled$`17:00` <- util.function("17:00:00", data.hour.scheduled)
+# data.hour.scheduled$`18:00` <- util.function("18:00:00", data.hour.scheduled)
+# data.hour.scheduled$`19:00` <- util.function("19:00:00", data.hour.scheduled)
+# data.hour.scheduled$`20:00` <- util.function("20:00:00", data.hour.scheduled)
+# data.hour.scheduled$`21:00` <- util.function("21:00:00", data.hour.scheduled)
+# data.hour.scheduled$`22:00` <- util.function("22:00:00", data.hour.scheduled)
+# data.hour.scheduled$`23:00` <- util.function("23:00:00", data.hour.scheduled)
+# 
+# # Data Validation
+# data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):which(colnames(data.hour.scheduled)=="23:00")])
+# data.hour.scheduled$actual <- as.numeric(difftime(data.hour.scheduled$Appt.End.Time, data.hour.scheduled$Appt.Start.Time, units = "mins"))
+# data.hour.scheduled$comparison <- ifelse(data.hour.scheduled$sum ==data.hour.scheduled$actual, 0, 1)
+# data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
+# 
+# # Format utilization
+# data.hour.scheduled$util.type <- "scheduled"
+# 
+# timeOptionsHr_filter <- c("07:00","08:00","09:00",
+#                           "10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00",
+#                           "20:00") ## Time Range by Hour Filter
+# 
+# utilization.data <- data.hour.scheduled %>%
+#   dplyr::select(Campus, Campus.Specialty, Department, Resource, Provider,
+#                 Visit.Method, Appt.Type, Appt.Status,
+#                 Appt.DateYear, Appt.MonthYear, Appt.Year, Appt.YearQtr, Appt.Week, Appt.Day, Appt.TM.Hr, Session,
+#                 timeOptionsHr_filter, sum, comparison, NPI)
+# 
+# # Save Processed Utilization Data Raw on Server --------------------------------
+# # saveRDS(utilization.data, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
+# 
+# saveRDS(utilization.data, "utilization_data_2022Q2.rds")
+
+```
+
+
+```{r Import Full Utilization Data, echo = FALSE, warning = FALSE, message = FALSE}
+
+# util_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds"))
+
+util_data_raw <- readRDS(file.choose())
+
+```
+
+
+```{r Room Capacity Processing, echo = FALSE, warning = FALSE, message = FALSE}
+
+mshs_room_capacity_grid <- readRDS(file.choose())
+pt_rooms_summary <- readRDS(file.choose())
+practice_multiple_locations <- read_excel(file.choose())
+visits_room_day_benchmarks <- read_csv(file.choose())
+
+```
+
+
+```{r Turns Utilization by Location Summary Table, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Total Room Count by Location
+## Get total unique room count by building address and floor
+location_room_count <- pt_rooms_summary %>%
+  group_by(`Building Address`, Floor) %>%
+  summarise(total_rooms = length(unique(Room)))
+  
+# Location by Department -------------------------------------------------------
+## Total main rooms assigned/used by campus and specialty 
+location_main_rooms <- anti_join(pt_rooms_summary, 
+                                 practice_multiple_locations[,c("Building Address","Floor","Department")])
+location_main_rooms <- location_main_rooms %>%
+  group_by(`Building Address`, Floor, Campus, Campus.Specialty) %>%
+  summarise(dept_assigned_rooms = length(unique(Room)))
+
+location_main_rooms <- merge(location_main_rooms, location_room_count, all.x = TRUE)
+
+## Total sub rooms assigned/used by campus and specialty based on Practice Multiple Locations Mapping File 
+location_sub_rooms <- semi_join(pt_rooms_summary, 
+                                 practice_multiple_locations[,c("Building Address","Floor","Department")])
+location_sub_rooms <- location_sub_rooms %>%
+  group_by(`Building Address`, Floor, Campus, Campus.Specialty) %>%
+  summarise(dept_assigned_rooms = length(unique(Room)))
+
+location_sub_rooms <- merge(location_sub_rooms, location_room_count, all.x = TRUE)
+
+
+# Volume by Department ---------------------------------------------------------
+# Volume seen by departments mapped to location
+location_main_volume <- anti_join(scheduling_data_raw, 
+                                  practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
+
+location_main_volume <- location_main_volume %>% 
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  summarise(daily_vol = n()) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Visit.Method, Session) %>%
+  summarise(avg_vol = round(sum(daily_vol)/length(unique(Appt.DateYear))))
+  
+
+# Volume seen outside of departments mapped to location 
+location_sub_volume <- semi_join(scheduling_data_raw, 
+                                 practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
+
+location_sub_volume <- location_sub_volume %>% 
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  summarise(daily_vol = n()) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Visit.Method, Session) %>%
+  summarise(avg_vol = round(sum(daily_vol)/length(unique(Appt.DateYear))))
+
+
+# Utilization by Location: Rooms and Volume Data Merge -------------------------
+location_main_util_turns <- merge(location_main_volume, location_main_rooms,
+                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+
+location_sub_util_turns <- merge(location_sub_volume, location_sub_rooms,
+                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+
+## Merge utilization data for main and sub room assignments 
+location_util_turns_merged <- bind_rows(location_main_util_turns, location_sub_util_turns)
+location_util_turns_merged <- location_util_turns_merged %>%
+  pivot_wider(names_from = "Visit.Method",
+              values_from = "avg_vol",
+              values_fill = 0) %>%
+  mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:ALL,
+               names_to = "Visit.Method",
+               values_to = "avg_vol") %>%
+  pivot_wider(names_from = "Session",
+              values_from = "avg_vol",
+              values_fill = 0) %>%
+  mutate(Day = AM + PM) %>%
+  pivot_longer(AM:Day,
+               names_to = "Session",
+               values_to = "avg_vol") 
+
+## Merge with Visits/Room/Day Benchmark
+location_util_turns_merged$Benchmark <- visits_room_day_benchmarks$Benchmark[match(location_util_turns_merged$Campus.Specialty,
+                                                                             visits_room_day_benchmarks$Campus.Specialty)]
+
+```
+
+```{r Durations Utilization by Location Summary Table, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Utilization by Department ---------------------------------------------------------
+## Durations completed by departments mapped to location
+location_main_util_hour <- anti_join(util_data_raw, 
+                                     practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
+
+location_main_util_hour <- location_main_util_hour %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  dplyr::select(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+                Visit.Method, Session, `08:00`:`19:00`) %>%
+  pivot_longer(`08:00`:`19:00`,
+               names_to = "space_time",
+               values_to = "space_dur") %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+           Visit.Method, Session, space_time) %>%
+  summarise(total_dur = sum(space_dur)) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.Day, 
+           Visit.Method, Session, space_time) %>%
+  summarise(avg_dur = round(sum(total_dur)/length(unique(Appt.DateYear)))) 
+  
+  
+## Durations completed outside of departments mapped to location 
+location_sub_util_hour <- semi_join(util_data_raw, 
+                                    practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
+
+location_sub_util_hour <- location_sub_util_hour %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  dplyr::select(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+                Visit.Method, Session, `08:00`:`19:00`) %>%
+  pivot_longer(`08:00`:`19:00`,
+               names_to = "space_time",
+               values_to = "space_dur") %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+           Visit.Method, Session, space_time) %>%
+  summarise(total_dur = sum(space_dur)) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.Day, 
+           Visit.Method, Session, space_time) %>%
+  summarise(avg_dur = round(sum(total_dur)/length(unique(Appt.DateYear)))) 
+
+
+# Utilization by Location: Rooms and Volume Data Merge -------------------------
+location_main_util_hour <- merge(location_main_util_hour, location_main_rooms,
+                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+
+location_sub_util_hour <- merge(location_sub_util_hour, location_sub_rooms,
+                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+
+## Merge utilization data for main and sub room assignments 
+location_util_dur_merged <- bind_rows(location_main_util_hour, location_sub_util_hour)
+location_util_dur_merged <- location_util_dur_merged %>%
+  pivot_wider(names_from = "Visit.Method",
+              values_from = "avg_dur",
+              values_fill = 0) %>%
+  mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:ALL,
+               names_to = "Visit.Method",
+               values_to = "avg_dur") %>%
+  pivot_wider(names_from = "Session",
+              values_from = "avg_dur",
+              values_fill = 0) %>%
+  mutate(Day = AM + PM) %>%
+  pivot_longer(AM:Day,
+               names_to = "Session",
+               values_to = "avg_dur") 
+
+```
+
+
+
+
+```{r Output Calculated Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Utilization Data -------------------------------------------------------------
+saveRDS(location_util_turns_merged, "locations_util_turns_merged.rds") # By Turns
+saveRDS(location_util_dur_merged, "locations_util_dur_merged.rds") # By Turns
+
+```
+
+
