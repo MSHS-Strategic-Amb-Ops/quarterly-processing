@@ -324,6 +324,7 @@ location_util_turns_merged$Benchmark <- visits_room_day_benchmarks$Benchmark[mat
 
 ```
 
+
 ```{r Durations Utilization by Location Summary Table, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Utilization by Department ---------------------------------------------------------
@@ -398,8 +399,6 @@ location_util_dur_merged <- location_util_dur_merged %>%
 ```
 
 
-
-
 ```{r Output Calculated Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Utilization Data -------------------------------------------------------------
@@ -407,5 +406,3 @@ saveRDS(location_util_turns_merged, "locations_util_turns_merged.rds") # By Turn
 saveRDS(location_util_dur_merged, "locations_util_dur_merged.rds") # By Turns
 
 ```
-
-
