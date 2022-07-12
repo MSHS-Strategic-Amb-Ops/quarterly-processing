@@ -234,7 +234,7 @@ visits_room_day_benchmarks <- read_csv(file.choose())
 ```
 
 
-```{r Turns Utilization by Location Summary Table, echo = FALSE, warning = FALSE, message = FALSE}
+```{r Location Turns Utilization, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Total Room Count by Location
 ## Get total unique room count by building address and floor
@@ -325,7 +325,7 @@ location_util_turns_merged$Benchmark <- visits_room_day_benchmarks$Benchmark[mat
 ```
 
 
-```{r Durations Utilization by Location Summary Table, echo = FALSE, warning = FALSE, message = FALSE}
+```{r Location Durations Utilization, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Utilization by Department ---------------------------------------------------------
 ## Durations completed by departments mapped to location
@@ -399,10 +399,10 @@ location_util_dur_merged <- location_util_dur_merged %>%
 ```
 
 
-```{r Output Calculated Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
+```{r Output Utilization Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Utilization Data -------------------------------------------------------------
 saveRDS(location_util_turns_merged, "locations_util_turns_merged.rds") # By Turns
-saveRDS(location_util_dur_merged, "locations_util_dur_merged.rds") # By Turns
+saveRDS(location_util_dur_merged, "locations_util_dur_merged.rds") # By Durations
 
 ```
