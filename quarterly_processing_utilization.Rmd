@@ -263,24 +263,25 @@ location_room_count <- pt_rooms_summary %>%
   group_by(`Building Address`, Floor) %>%
   summarise(total_rooms = length(unique(Room)))
   
+
 # Location by Department -------------------------------------------------------
 ## Total main rooms assigned/used by campus and specialty 
 location_main_rooms <- anti_join(pt_rooms_summary, 
                                  practice_multiple_locations[,c("Building Address","Floor","Department")])
 location_main_rooms <- location_main_rooms %>%
-  group_by(`Building Address`, Floor, Campus, Campus.Specialty) %>%
+  group_by(`Building Address`, Floor, Campus, Campus.Specialty, Department) %>%
   summarise(dept_assigned_rooms = length(unique(Room)))
 
-location_main_rooms <- merge(location_main_rooms, location_room_count, all.x = TRUE)
+# location_main_rooms <- merge(location_main_rooms, location_room_count, all.x = TRUE)
 
 ## Total sub rooms assigned/used by campus and specialty based on Practice Multiple Locations Mapping File 
 location_sub_rooms <- semi_join(pt_rooms_summary, 
                                  practice_multiple_locations[,c("Building Address","Floor","Department")])
 location_sub_rooms <- location_sub_rooms %>%
-  group_by(`Building Address`, Floor, Campus, Campus.Specialty) %>%
+  group_by(`Building Address`, Floor, Campus, Campus.Specialty, Department) %>%
   summarise(dept_assigned_rooms = length(unique(Room)))
-
-location_sub_rooms <- merge(location_sub_rooms, location_room_count, all.x = TRUE)
+# 
+# location_sub_rooms <- merge(location_sub_rooms, location_room_count, all.x = TRUE)
 
 
 # Volume by Department ---------------------------------------------------------
@@ -293,11 +294,17 @@ location_main_volume <- location_main_volume %>%
   filter(Appt.YearQtr == "2022 Q2") %>%
   filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
   filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
-  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
   summarise(daily_vol = n()) %>%
-  group_by(Campus, Campus.Specialty, Appt.YearQtr, Visit.Method, Session) %>%
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Visit.Method, Session) %>%
   summarise(avg_vol = round(sum(daily_vol)/workdays_quarter)) 
   
+
+volume <- scheduling_data_raw %>%  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  summarise(total = n())
 
 # Volume seen outside of departments mapped to location 
 location_sub_volume <- semi_join(scheduling_data_raw, 
@@ -308,22 +315,36 @@ location_sub_volume <- location_sub_volume %>%
   filter(Appt.YearQtr == "2022 Q2") %>%
   filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
   filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
-  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
   summarise(daily_vol = n()) %>%
-  group_by(Campus, Campus.Specialty, Appt.YearQtr, Visit.Method, Session) %>%
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Visit.Method, Session) %>%
   summarise(avg_vol = round(sum(daily_vol)/workdays_quarter))
 
 
 # Utilization by Location: Rooms and Volume Data Merge -------------------------
-location_main_util_turns <- merge(location_main_volume, location_main_rooms,
-                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+location_main_util_turns <- left_join(location_main_volume, location_main_rooms,
+                            by = c("Campus","Campus.Specialty","Department"))
 
-location_sub_util_turns <- merge(location_sub_volume, location_sub_rooms,
-                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+location_sub_util_turns <- left_join(location_sub_volume, location_sub_rooms,
+                            by = c("Campus","Campus.Specialty","Department"))
 
 ## Merge utilization data for main and sub room assignments 
 location_util_turns_merged <- bind_rows(location_main_util_turns, location_sub_util_turns)
-location_util_turns_merged <- location_util_turns_merged %>%
+# location_util_turns_merged <- location_util_turns_merged %>%
+#   group_by(Appt.YearQtr, `Building Address`, Floor, Campus, Campus.Specialty, Visit.Method, Session) %>%
+#   mutate(rooms_assigned_specialty = length(unique(Room)))
+
+## Merge with Visits/Room/Day Benchmark
+location_util_turns_merged$Benchmark <- visits_room_day_benchmarks$Benchmark[match(location_util_turns_merged$Campus.Specialty,
+                                                                             visits_room_day_benchmarks$Campus.Specialty)]
+
+location_util_turns_summary <- location_util_turns_merged %>%
+  group_by(Appt.YearQtr, `Building Address`, Floor, Visit.Method, Session) %>%
+  summarise(Benchmark = round(mean(Benchmark)),
+            avg_vol = sum(avg_vol))
+location_util_turns_summary <- merge(location_util_turns_summary, location_room_count, all.x = TRUE)
+
+location_util_turns_summary <- location_util_turns_summary %>%
   pivot_wider(names_from = "Visit.Method",
               values_from = "avg_vol",
               values_fill = 0) %>%
@@ -339,9 +360,23 @@ location_util_turns_merged <- location_util_turns_merged %>%
                names_to = "Session",
                values_to = "avg_vol") 
 
-## Merge with Visits/Room/Day Benchmark
-location_util_turns_merged$Benchmark <- visits_room_day_benchmarks$Benchmark[match(location_util_turns_merged$Campus.Specialty,
-                                                                             visits_room_day_benchmarks$Campus.Specialty)]
+
+# location_util_turns_merged <- location_util_turns_merged %>%
+#   pivot_wider(names_from = "Visit.Method",
+#               values_from = "avg_vol",
+#               values_fill = 0) %>%
+#   mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+#   pivot_longer(`IN PERSON`:ALL,
+#                names_to = "Visit.Method",
+#                values_to = "avg_vol") %>%
+#   pivot_wider(names_from = "Session",
+#               values_from = "avg_vol",
+#               values_fill = 0) %>%
+#   mutate(Day = AM + PM) %>%
+#   pivot_longer(AM:Day,
+#                names_to = "Session",
+#                values_to = "avg_vol") 
+
 
 ```
 
@@ -357,17 +392,17 @@ location_main_util_hour <- location_main_util_hour %>%
   filter(Appt.Status == "Arrived") %>%
   filter(Appt.YearQtr == "2022 Q2") %>%
   filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
-  dplyr::select(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+  dplyr::select(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.DateYear, Appt.Day, 
                 Visit.Method, `08:00`:`19:00`) %>%
   pivot_longer(`08:00`:`19:00`,
                names_to = "space_time",
                values_to = "space_dur") %>%
   mutate(Session = ifelse(as.integer(sub(':.*', '', space_time)) >= 12, 'PM', 'AM')) %>%
-  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.Day, 
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.Day, 
            Visit.Method, Session, space_time) %>%
   summarise(total_dur = round(sum(space_dur))) 
 
-  
+
 ## Durations completed outside of departments mapped to location 
 location_sub_util_hour <- semi_join(util_data_raw, 
                                     practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
@@ -376,32 +411,151 @@ location_sub_util_hour <- location_sub_util_hour %>%
   filter(Appt.Status == "Arrived") %>%
   filter(Appt.YearQtr == "2022 Q2") %>%
   filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
-  dplyr::select(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+  dplyr::select(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.DateYear, Appt.Day, 
                 Visit.Method, `08:00`:`19:00`) %>%
   pivot_longer(`08:00`:`19:00`,
                names_to = "space_time",
                values_to = "space_dur") %>%
   mutate(Session = ifelse(as.integer(sub(':.*', '', space_time)) >= 12, 'PM', 'AM')) %>%
-  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.Day, 
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.Day, 
            Visit.Method, Session, space_time) %>%
   summarise(total_dur = round(sum(space_dur))) 
 
 
 # Utilization by Location: Rooms and Volume Data Merge -------------------------
-location_main_util_hour <- merge(location_main_util_hour, location_main_rooms,
-                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+location_main_util_hour <- left_join(location_main_util_hour, location_main_rooms,
+                            by = c("Campus","Campus.Specialty","Department"))
 
-location_sub_util_hour <- merge(location_sub_util_hour, location_sub_rooms,
-                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+location_sub_util_hour <- left_join(location_sub_util_hour, location_sub_rooms,
+                            by = c("Campus","Campus.Specialty","Department"))
 
 ## Merge utilization data for main and sub room assignments 
 location_util_dur_merged <- bind_rows(location_main_util_hour, location_sub_util_hour)
 location_util_dur_merged$Days <- weekdays_quarter$days[match(location_util_dur_merged$Appt.Day, weekdays_quarter$Appt.Day)]
 location_util_dur_merged <- location_util_dur_merged %>%
-  mutate(avg_dur = round(total_dur/Days))
+  mutate(avg_dur = round(total_dur/Days)) 
+location_util_dur_merged <- merge(location_util_dur_merged, location_room_count, all.x = TRUE)
 
-location_util_dur_merged <- location_util_dur_merged %>%
-  dplyr::select(-c(total_dur, Days)) %>%
+  
+location_util_dur_summary <- location_util_dur_merged %>%
+  group_by(Appt.YearQtr, `Building Address`, Floor, Visit.Method, Session) %>%
+  summarise(avg_dur = sum(avg_dur))
+location_util_dur_summary <- merge(location_util_dur_summary, location_room_count, all.x = TRUE)
+
+
+location_util_dur_summary <- location_util_dur_summary %>%
+  pivot_wider(names_from = "Visit.Method",
+              values_from = "avg_dur",
+              values_fill = 0) %>%
+  mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:ALL,
+               names_to = "Visit.Method",
+               values_to = "avg_dur") %>%
+  pivot_wider(names_from = "Session",
+              values_from = "avg_dur",
+              values_fill = 0) %>%
+  mutate(Day = AM + PM) %>%
+  pivot_longer(AM:Day,
+               names_to = "Session",
+               values_to = "avg_dur") 
+
+
+# location_util_dur_merged <- location_util_dur_merged %>%
+#   pivot_wider(names_from = "Visit.Method",
+#               values_from = "avg_dur",
+#               values_fill = 0) %>%
+#   mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+#   pivot_longer(`IN PERSON`:ALL,
+#                names_to = "Visit.Method",
+#                values_to = "avg_dur") %>%
+#   pivot_wider(names_from = "Session",
+#               values_from = "avg_dur",
+#               values_fill = 0) %>%
+#   mutate(Day = AM + PM) %>%
+#   pivot_longer(AM:Day,
+#                names_to = "Session",
+#                values_to = "avg_dur") 
+```
+
+
+```{r Provider Turns Utilization, echo = FALSE, warning = FALSE, message = FALSE}
+
+provider_util_turns_summary <- scheduling_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  summarise(daily_vol = n()) %>%
+  group_by(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Visit.Method, Session) %>%
+  summarise(avg_vol = round(sum(daily_vol)/workdays_quarter)) 
+
+
+provider_util_turns_summary <- provider_util_turns_summary %>%
+  pivot_wider(names_from = "Visit.Method",
+              values_from = "avg_vol",
+              values_fill = 0) %>%
+  mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:ALL,
+               names_to = "Visit.Method",
+               values_to = "avg_vol") %>%
+  pivot_wider(names_from = "Session",
+              values_from = "avg_vol",
+              values_fill = 0) %>%
+  mutate(Day = AM + PM) %>%
+  pivot_longer(AM:Day,
+               names_to = "Session",
+               values_to = "avg_vol") 
+
+
+provider_util_turns_summary$Benchmark <- visits_room_day_benchmarks$Benchmark[match(provider_util_turns_summary$Campus.Specialty,
+                                                                             visits_room_day_benchmarks$Campus.Specialty)]
+
+provider_util_turns_summary <- provider_util_turns_summary %>%
+  mutate(Benchmark = ifelse(Session == "Day", Benchmark, Benchmark/2))
+
+```
+
+
+```{r Provider Durations Utilization, echo = FALSE, warning = FALSE, message = FALSE}
+
+provider_util_dur_merged <- util_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  dplyr::select(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+                Visit.Method, `08:00`:`19:00`) %>%
+  pivot_longer(`08:00`:`19:00`,
+               names_to = "space_time",
+               values_to = "space_dur") %>%
+  mutate(Session = ifelse(as.integer(sub(':.*', '', space_time)) >= 12, 'PM', 'AM')) %>%
+  group_by(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Appt.DateYear, Appt.Day, 
+           Visit.Method, Session, space_time) %>%
+  summarise(total_dur = round(sum(space_dur)))  %>%
+  group_by(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Appt.Day, 
+           Visit.Method, Session, space_time) %>%
+  summarise(avg_dur = round(mean(total_dur)))
+
+
+provider_util_dur_summary <- util_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  dplyr::select(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Appt.DateYear, Appt.Day,
+                Visit.Method, `08:00`:`19:00`) %>%
+  pivot_longer(`08:00`:`19:00`,
+               names_to = "space_time",
+               values_to = "space_dur") %>%
+  mutate(Session = ifelse(as.integer(sub(':.*', '', space_time)) >= 12, 'PM', 'AM')) %>%
+  group_by(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr, Appt.DateYear, 
+           Visit.Method, Session) %>%
+  summarise(total_dur = round(sum(space_dur)))  %>%
+  group_by(Campus, Campus.Specialty, Department, Provider, Appt.YearQtr,
+           Visit.Method, Session) %>%
+  summarise(avg_dur = round(mean(total_dur)))
+
+
+provider_util_dur_summary <- provider_util_dur_summary %>%
   pivot_wider(names_from = "Visit.Method",
               values_from = "avg_dur",
               values_fill = 0) %>%
@@ -423,7 +577,20 @@ location_util_dur_merged <- location_util_dur_merged %>%
 ```{r Output Utilization Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Utilization Data -------------------------------------------------------------
+## Location=====================================================================
 saveRDS(location_util_turns_merged, "locations_util_turns_merged.rds") # By Turns
+saveRDS(location_util_turns_summary, "locations_util_turns_summary.rds") # By Turns
+
 saveRDS(location_util_dur_merged, "locations_util_dur_merged.rds") # By Durations
+saveRDS(location_util_dur_summary, "locations_util_dur_summary.rds") # By Durations
+
+## Provider ====================================================================
+saveRDS(provider_util_turns_summary, "provider_util_turns_summary.rds") # By Turns
+saveRDS(provider_util_dur_summary, "provider_util_dur_summary.rds") # By Turns
+saveRDS(provider_util_dur_merged, "provider_util_dur_merged.rds") # By Turns
+
+
+# Room Inventory ----------------------------------------------------------------
+saveRDS(pt_rooms_summary, "pt_rooms_summary.rds")
 
 ```
