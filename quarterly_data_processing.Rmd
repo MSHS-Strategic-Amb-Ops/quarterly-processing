@@ -147,7 +147,7 @@ master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulator
 
 scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$Department, master_amb_mapping$DEPARTMENT_NAME)]
 scheduling_data_raw <- scheduling_data_raw %>%
-  mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
+  # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
   filter(Managed == "Department")
 
 # Departments Managed by Site
