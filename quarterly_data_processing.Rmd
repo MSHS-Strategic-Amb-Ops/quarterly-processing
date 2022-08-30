@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "quarterly-processing"
 output: html_document
@@ -575,3 +576,582 @@ saveRDS(waitTime_prov, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTim
 ```
 
 
+=======
+---
+title: "quarterly-processing"
+output: html_document
+date: '2022-06-29'
+---
+
+```{r Load Packages, echo = FALSE, warning = FALSE, message = FALSE}
+# # Load packages -----------------------------------------------------------------------------------
+suppressMessages({
+  library(readxl)
+  library(writexl)
+  library(plyr)
+  library(dplyr)
+  library(data.table)
+  library(zoo)
+  library(shiny)
+  library(shinydashboard)
+  library(shinydashboardPlus)
+  library(shinyWidgets)
+  library(htmlwidgets)
+  library(lubridate)
+  library(tcltk)
+  library(tidyverse)
+  library(plotly)
+  library(knitr)
+  library(kableExtra)
+  library(leaflet)
+  library(grid)
+  library(gridExtra)
+  library(eeptools)
+  library(ggQC)
+  library(zipcodeR)
+  library(utils)
+  library(scales)
+  library(chron)
+  library(bupaR)
+  library(shiny)
+  library(DT)
+  library(DiagrammeR)
+  library(shinyalert)
+  library(edeaR)
+  library(processmapR)
+  library(processmonitR)
+  library(processanimateR)
+  library(tidyr)
+  library(lubridate)
+  library(RColorBrewer)
+  library(DiagrammeR)
+  library(ggplot2)
+  library(leaflet)
+  library(readr)
+  library(highcharter)
+  library(ggforce) # for 'geom_arc_bar'
+  library(packcircles) # for packed circle graph
+  library(viridis)
+  library(ggiraph)
+  library(treemapify)
+  library(treemap)
+  library(broom)
+  library(extrafont)
+  library(tis) # for US holidays
+  library(vroom)
+  library(sjmisc)
+  library(tools)
+  library(here)
+  library(shinyBS)
+  library(shinyscreenshot)
+  library(fasttime)
+  library(shinycssloaders)
+  library(feather)
+  # library(zipcodeR)
+  library(formattable)
+  library(shinyjs)
+  library(janitor)
+  library(patchwork)
+  library(flexdashboard)
+  # library(tidyverse)
+  # library(viridis)
+  # library(hrbrthemes)
+  # library(plotly)
+  # install.packages("bsts")
+  library(bsts)
+  library(reactable)
+  # install.packages("reactablefmtr")
+  library(reactablefmtr)
+  library(svDialogs)
+  library(openxlsx)
+  library(flextable)
+  library(officedown)
+  library(officer)
+  library(magrittr)
+  library(webshot) 
+  library(png)
+  library(ggh4x)
+})
+
+
+```
+
+
+```{r Import Raw Scheduling Data, echo = FALSE, warning = FALSE, message = FALSE}
+
+# scheduling_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")) %>%
+#   filter(!is.na(Campus)) %>%
+#   filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
+
+scheduling_data_raw <- as.data.frame(readRDS(file.choose())) %>%
+  filter(!is.na(Campus)) %>%
+  filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  mutate(Appt.YearQtr = as.yearqtr(Appt.DateYear),
+         Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM'))
+
+```
+
+
+```{r Utilization Data Processing, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Create Utilizaiton Data Raw  -------------------------------------------------
+## Function for formatting date and time by hour
+# system_date <- function(time){
+#   result <- as.POSIXct(paste0(as.character(Sys.Date())," ",time), format="%Y-%m-%d %H:%M:%S")
+#   return(result)
+# }
+# 
+# util.function <- function(time, df){
+#   result <- ifelse(system_date(time) %within% df$time.interval == TRUE,
+#                    ifelse(difftime(df$Appt.End.Time, system_date(time), units = "mins") >= 60, 60,
+#                           as.numeric(difftime(df$Appt.End.Time, system_date(time), units = "mins"))),
+#                    ifelse(floor_date(df$Appt.Start.Time, "hour") == system_date(time),
+#                           ifelse(floor_date(df$Appt.End.Time, "hour") == system_date(time),
+#                                  difftime(df$Appt.End.Time, df$Appt.Start.Time, units = "mins"),
+#                                  difftime(system_date(time) + 60*60, df$Appt.Start.Time, units = "mins")), 0))
+#   return(result)
+# }
+# 
+# 
+# ## Pre-process Utilization by Hour based on Scheduled Appointment Times --------------------------------------------------
+# data.hour.scheduled <- scheduling_data_raw %>%
+#   filter(Appt.Status == "Arrived") %>%
+#   filter(Appt.DateYear < Sys.time())
+# 
+# data.hour.scheduled$actual.visit.dur <- data.hour.scheduled$Appt.Dur * 1.2 # 20% Adjustment Factor
+# 
+# data.hour.scheduled$Appt.Start <- as.POSIXct(data.hour.scheduled$Appt.DTTM, format = "%H:%M")
+# data.hour.scheduled$Appt.End <- as.POSIXct(data.hour.scheduled$Appt.Start + data.hour.scheduled$Appt.Dur*60, format = "%H:%M")
+# 
+# data.hour.scheduled$Appt.Start.Time <- as.POSIXct(paste0(Sys.Date()," ", format(data.hour.scheduled$Appt.Start, format="%H:%M:%S")))
+# data.hour.scheduled$Appt.End.Time <- as.POSIXct(paste0(Sys.Date()," ", format(data.hour.scheduled$Appt.End, format="%H:%M:%S")))
+# 
+# data.hour.scheduled$time.interval <- interval(data.hour.scheduled$Appt.Start.Time, data.hour.scheduled$Appt.End.Time)
+# 
+# data.hour.scheduled$`00:00` <- util.function("00:00:00", data.hour.scheduled)
+# data.hour.scheduled$`01:00` <- util.function("01:00:00", data.hour.scheduled)
+# data.hour.scheduled$`02:00` <- util.function("02:00:00", data.hour.scheduled)
+# data.hour.scheduled$`03:00` <- util.function("03:00:00", data.hour.scheduled)
+# data.hour.scheduled$`04:00` <- util.function("04:00:00", data.hour.scheduled)
+# data.hour.scheduled$`05:00` <- util.function("05:00:00", data.hour.scheduled)
+# data.hour.scheduled$`06:00` <- util.function("06:00:00", data.hour.scheduled)
+# data.hour.scheduled$`07:00` <- util.function("07:00:00", data.hour.scheduled)
+# data.hour.scheduled$`08:00` <- util.function("08:00:00", data.hour.scheduled)
+# data.hour.scheduled$`09:00` <- util.function("09:00:00", data.hour.scheduled)
+# data.hour.scheduled$`10:00` <- util.function("10:00:00", data.hour.scheduled)
+# data.hour.scheduled$`11:00` <- util.function("11:00:00", data.hour.scheduled)
+# data.hour.scheduled$`12:00` <- util.function("12:00:00", data.hour.scheduled)
+# data.hour.scheduled$`13:00` <- util.function("13:00:00", data.hour.scheduled)
+# data.hour.scheduled$`14:00` <- util.function("14:00:00", data.hour.scheduled)
+# data.hour.scheduled$`15:00` <- util.function("15:00:00", data.hour.scheduled)
+# data.hour.scheduled$`16:00` <- util.function("16:00:00", data.hour.scheduled)
+# data.hour.scheduled$`17:00` <- util.function("17:00:00", data.hour.scheduled)
+# data.hour.scheduled$`18:00` <- util.function("18:00:00", data.hour.scheduled)
+# data.hour.scheduled$`19:00` <- util.function("19:00:00", data.hour.scheduled)
+# data.hour.scheduled$`20:00` <- util.function("20:00:00", data.hour.scheduled)
+# data.hour.scheduled$`21:00` <- util.function("21:00:00", data.hour.scheduled)
+# data.hour.scheduled$`22:00` <- util.function("22:00:00", data.hour.scheduled)
+# data.hour.scheduled$`23:00` <- util.function("23:00:00", data.hour.scheduled)
+# 
+# # Data Validation
+# data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):which(colnames(data.hour.scheduled)=="23:00")])
+# data.hour.scheduled$actual <- as.numeric(difftime(data.hour.scheduled$Appt.End.Time, data.hour.scheduled$Appt.Start.Time, units = "mins"))
+# data.hour.scheduled$comparison <- ifelse(data.hour.scheduled$sum ==data.hour.scheduled$actual, 0, 1)
+# data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
+# 
+# # Format utilization 
+# data.hour.scheduled$util.type <- "scheduled"
+# 
+# timeOptionsHr_filter <- c("07:00","08:00","09:00",
+#                           "10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00",
+#                           "20:00") ## Time Range by Hour Filter
+# 
+# utilization.data <- data.hour.scheduled %>%
+#   dplyr::select(Campus, Campus.Specialty, Department, Resource, Provider,
+#          Visit.Method, Appt.Type, Appt.Status,
+#          Appt.DateYear, Appt.MonthYear, Appt.Year, Appt.Week, Appt.Day, Appt.TM.Hr, holiday, util.type,
+#          timeOptionsHr_filter, sum, comparison, NPI)
+# 
+# # Save Processed Utilization Data Raw on Server --------------------------------
+# # saveRDS(utilization.data, "/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds")
+# 
+# saveRDS(utilization.data, "utilization_data.rds")
+
+```
+
+
+```{r Import Full Utilization Data, echo = FALSE, warning = FALSE, message = FALSE}
+
+# util_data_raw <- as.data.frame(readRDS("/nfs/data/Applications/Ambulatory/Quarterly_Data/full_utilization_data.rds"))
+
+util_data_raw <- readRDS(file.choose()) %>%
+  mutate(Appt.YearQtr = as.yearqtr(Appt.DateYear),
+         Session = ifelse(as.integer(sub(':.*', '', Appt.TM.Hr)) >= 12, 'PM', 'AM'))
+```
+
+
+```{r Import Mapping Files, echo = FALSE, warning = FALSE, message = FALSE}
+
+dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv") # Epic Department Zip Code
+visitPlan <- read_csv("/nfs/data/Applications/Ambulatory/Visit Plans.csv") # Epic Visit Plan Grouping
+
+dept_zip_code_ref <- read_csv("C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/server-upload/Department_Zip_Code.csv")
+visitPlan <- read_csv("C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/server-upload/Visit_Plans.csv")
+
+```
+
+
+```{r Scheduling Data Processing, echo = FALSE, warning = FALSE, message = FALSE}
+
+scheduling_data_raw <- scheduling_data_raw %>%
+  mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
+         Appt.YearQtr = as.yearqtr(Appt.DTTM),
+         Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
+         Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'),
+         New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'),
+         Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"),
+         Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"),
+         Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"),
+         Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
+         Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
+
+```
+
+
+```{r Volume Tables, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Volume Tables ----------------------------------------------------------------
+## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
+monthly_vol <- scheduling_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
+         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
+  group_by(Campus, Campus.Specialty, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>%
+  summarise(monthly_vol = n())
+
+# # Merge with Rad Onc and Radiology Data
+# monthly_vol <- bind_rows(monthly_vol, rad_radOnc_data)
+
+monthly_vol <- monthly_vol %>%
+  # dplyr::select(-Month) %>%
+  pivot_wider(
+    names_from = Visit.Method,
+    values_from = monthly_vol,
+    values_fill=list(monthly_vol=0)
+  ) %>%
+  mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>%
+  pivot_longer(
+    7:9,
+    names_to = "Visit.Method",
+    values_to = "monthly_vol"
+  )
+
+
+## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
+vol_zip_code <- scheduling_data_raw %>%
+   filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear))
+
+vol_zip_code$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code$Department, dept_zip_code_ref$`Department Name`)]
+coordinates <- geocode_zip(vol_zip_code$dept_zip_code)
+vol_zip_code <- merge(vol_zip_code, coordinates, by.x = c("dept_zip_code"), by.y = c("zipcode"), all.x = TRUE)
+
+vol_zip_code <- vol_zip_code %>%
+  group_by(Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lng) %>%
+  summarise(total_vol = n()) %>%
+  mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))
+
+```
+
+
+```{r Access Tables, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Access Tables ----------------------------------------------------------------
+## New Patient Wait Time Horizon ===============================================
+waitTime_dist_specialty <- scheduling_data_raw %>%
+  filter(Wait.Time >= 0) %>%
+  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
+                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
+                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
+                           TRUE ~ ">30")) %>%
+  group_by(Campus.Specialty, Appt.Made.YearQtr, New.PT3, Visit.Method, group) %>%
+  summarise(total = n())
+
+## Median Wait Time ============================================================
+### By Specialty
+waitTime_mshs <- scheduling_data_raw %>%
+  filter(Wait.Time >= 0) %>%
+  group_by(Campus.Specialty, Appt.Made.YearQtr, New.PT3) %>%
+  summarise(med_wait = median(Wait.Time, na.rm = TRUE))
+
+### By Specialty and Site
+waitTime_site <- scheduling_data_raw %>%
+  filter(Wait.Time >= 0) %>%
+  group_by(Campus.Specialty, Appt.Made.YearQtr, Campus, New.PT3) %>%
+  summarise(med_wait = median(Wait.Time, na.rm = TRUE))
+
+### By Specialty and Provider
+waitTime_prov <- scheduling_data_raw %>%
+    filter(Wait.Time >= 0) %>%
+    filter(New.PT3 == "New") %>%
+    group_by(Campus.Specialty, Appt.Made.YearQtr, Provider, NPI) %>%
+    summarise(med_wait = as.numeric(median(Wait.Time, na.rm = TRUE)))
+
+```
+
+
+```{r Average Weekday Volume Tables, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Average Weekday Volume -------------------------------------------------------
+## By Specialty, and Quarter
+vol_weekday_quarter_mshs <- scheduling_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus.Specialty, Appt.YearQtr, Appt.DateYear, Session, Visit.Method) %>%
+  summarise(daily_vol = n()) %>%
+  pivot_wider(names_from = Session,
+              values_from = daily_vol,
+              values_fill = 0) %>%
+  group_by(Campus.Specialty, Appt.YearQtr, Visit.Method) %>%
+  summarise(AM = round(mean(AM, na.rm = TRUE)),
+            PM = round(mean(PM, na.rm = TRUE)))
+
+vol_weekday_quarter_mshs$Day <- vol_weekday_quarter_mshs$AM + vol_weekday_quarter_mshs$PM
+
+vol_weekday_quarter_mshs <- vol_weekday_quarter_mshs %>%
+  pivot_longer(AM:Day,
+               names_to = "Breakdown",
+               values_to = "Value") %>%
+  pivot_wider(names_from = Visit.Method,
+              values_from = Value,
+              values_fill = 0) %>%
+  mutate(All = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:All,
+               names_to = "Visit.Method",
+               values_to = "Value") %>%
+   mutate(Metric = "daily_vol") 
+  
+  
+## By Specialty, Site, and Quarter 
+vol_weekday_quarter_site <- scheduling_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus.Specialty, Campus, Appt.YearQtr, Appt.DateYear, Session, Visit.Method) %>%
+  summarise(daily_vol = n()) %>%
+  pivot_wider(names_from = Session,
+              values_from = daily_vol,
+              values_fill = 0) %>%
+  group_by(Campus.Specialty, Campus, Appt.YearQtr, Visit.Method) %>%
+  summarise(AM = round(mean(AM, na.rm = TRUE)),
+            PM = round(mean(PM, na.rm = TRUE)))
+
+vol_weekday_quarter_site$Day <- vol_weekday_quarter_site$AM + vol_weekday_quarter_site$PM
+
+vol_weekday_quarter_site <- vol_weekday_quarter_site %>%
+  pivot_longer(AM:Day,
+               names_to = "Breakdown",
+               values_to = "Value") %>%
+  pivot_wider(names_from = Visit.Method,
+              values_from = Value,
+              values_fill = 0) %>%
+  mutate(All = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:All,
+               names_to = "Visit.Method",
+               values_to = "Value") %>%
+   mutate(Metric = "daily_vol") 
+
+
+## By Specialty, Site, Department and Quarter 
+vol_weekday_quarter_dept <- scheduling_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus.Specialty, Campus, Department, Appt.YearQtr, Appt.DateYear, Session, Visit.Method) %>%
+  summarise(daily_vol = n()) %>%
+  pivot_wider(names_from = Session,
+              values_from = daily_vol,
+              values_fill = 0) %>%
+  group_by(Campus.Specialty, Campus, Department, Appt.YearQtr, Visit.Method) %>%
+  summarise(AM = round(mean(AM, na.rm = TRUE)),
+            PM = round(mean(PM, na.rm = TRUE)))
+
+vol_weekday_quarter_dept$Day <- vol_weekday_quarter_dept$AM + vol_weekday_quarter_dept$PM
+
+vol_weekday_quarter_dept <- vol_weekday_quarter_dept %>%
+  pivot_longer(AM:Day,
+               names_to = "Breakdown",
+               values_to = "Value") %>%
+  pivot_wider(names_from = Visit.Method,
+              values_from = Value,
+              values_fill = 0) %>%
+  mutate(All = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:All,
+               names_to = "Visit.Method",
+               values_to = "Value") %>%
+   mutate(Metric = "daily_vol") 
+
+
+## By Specialty, Site, Department, Provider, and Quarter 
+vol_weekday_quarter_prov <- scheduling_data_raw %>%
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus.Specialty, Campus, Department, Provider, Appt.YearQtr, Appt.DateYear, Session, Visit.Method) %>%
+  summarise(daily_vol = n()) %>%
+  pivot_wider(names_from = Session,
+              values_from = daily_vol,
+              values_fill = 0) %>%
+  group_by(Campus.Specialty, Campus, Department, Provider, Appt.YearQtr, Visit.Method) %>%
+  summarise(AM = round(mean(AM, na.rm = TRUE)),
+            PM = round(mean(PM, na.rm = TRUE)))
+
+vol_weekday_quarter_prov$Day <- vol_weekday_quarter_prov$AM + vol_weekday_quarter_prov$PM
+
+vol_weekday_quarter_prov <- vol_weekday_quarter_prov %>%
+  pivot_longer(AM:Day,
+               names_to = "Breakdown",
+               values_to = "Value") %>%
+  pivot_wider(names_from = Visit.Method,
+              values_from = Value,
+              values_fill = 0) %>%
+  mutate(All = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:All,
+               names_to = "Visit.Method",
+               values_to = "Value") %>%
+   mutate(Metric = "daily_vol") 
+
+```
+
+
+```{r Room Capacity Processing, echo = FALSE, warning = FALSE, message = FALSE}
+
+mshs_room_capacity_grid <- readRDS(file.choose())
+# mshs_room_capacity_grid <- readRDS("/nfs/data/Applications/Ambulatory/mshs_room_capacity_grid.rds")
+
+visits_room_day_benchmarks <- read_csv(file.choose())
+# visits_util_benchmark <- read_csv("/nfs/data/Applications/Ambulatory/Visit_Room_Day_Benchmark.rds")
+
+practice_multiple_locations <- read_excel(file.choose())
+
+pt_rooms_summary <- readRDS(file.choose())
+
+```
+
+
+```{r Utilization by Location Summary Table, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Total Room Count by Location
+## Get total unique room count by building address and floor
+location_room_count <- pt_rooms_summary %>%
+  group_by(`Building Address`, Floor) %>%
+  summarise(total_rooms = length(unique(Room)))
+  
+# Location by Department -------------------------------------------------------
+## Total main rooms assigned/used by campus and specialty 
+location_main_rooms <- anti_join(pt_rooms_summary, 
+                                 practice_multiple_locations[,c("Building Address","Floor","Department")])
+location_main_rooms <- location_main_rooms %>%
+  group_by(`Building Address`, Floor, Campus, Campus.Specialty) %>%
+  summarise(dept_assigned_rooms = length(unique(Room)))
+
+location_main_rooms <- merge(location_main_rooms, location_room_count, all.x = TRUE)
+
+## Total sub rooms assigned/used by campus and specialty based on Practice Multiple Locations Mapping File 
+location_sub_rooms <- semi_join(pt_rooms_summary, 
+                                 practice_multiple_locations[,c("Building Address","Floor","Department")])
+location_sub_rooms <- location_sub_rooms %>%
+  group_by(`Building Address`, Floor, Campus, Campus.Specialty) %>%
+  summarise(dept_assigned_rooms = length(unique(Room)))
+
+location_sub_rooms <- merge(location_sub_rooms, location_room_count, all.x = TRUE)
+
+
+# Volume by Department ---------------------------------------------------------
+# Volume seen by departments mapped to location
+location_main_volume <- anti_join(scheduling_data_raw, 
+                                  practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
+
+location_main_volume <- location_main_volume %>% 
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  summarise(daily_vol = n()) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Visit.Method, Session) %>%
+  summarise(avg_vol = round(sum(daily_vol)/length(unique(Appt.DateYear))))
+  
+
+# Volume seen outside of departments mapped to location 
+location_sub_volume <- semi_join(scheduling_data_raw, 
+                                 practice_multiple_locations[,c("Department","Appt.Day","Provider","Session")])
+
+location_sub_volume <- location_sub_volume %>% 
+  filter(Appt.Status == "Arrived") %>%
+  filter(Appt.YearQtr == "2022 Q2") %>%
+  filter(Appt.DateYear <= max(Appt.Made.DateYear)) %>%
+  filter(Appt.Day %in% c("Mon","Tue","Wed","Thu","Fri")) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Appt.DateYear, Visit.Method, Session) %>%
+  summarise(daily_vol = n()) %>%
+  group_by(Campus, Campus.Specialty, Appt.YearQtr, Visit.Method, Session) %>%
+  summarise(avg_vol = round(sum(daily_vol)/length(unique(Appt.DateYear))))
+
+
+# Utilization by Location: Rooms and Volume Data Merge -------------------------
+location_main_util <- merge(location_main_volume, location_main_rooms,
+                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+
+location_sub_util <- merge(location_sub_volume, location_sub_rooms,
+                            by = c("Campus","Campus.Specialty"), all.x = TRUE)
+
+## Merge utilization data for main and sub room assignments 
+location_util_merged <- bind_rows(location_main_util, location_sub_util)
+location_util_merged <- location_util_merged %>%
+  pivot_wider(names_from = "Visit.Method",
+              values_from = "avg_vol",
+              values_fill = 0) %>%
+  mutate(ALL = `IN PERSON` + TELEHEALTH) %>%
+  pivot_longer(`IN PERSON`:ALL,
+               names_to = "Visit.Method",
+               values_to = "avg_vol") %>%
+  pivot_wider(names_from = "Session",
+              values_from = "avg_vol",
+              values_fill = 0) %>%
+  mutate(Day = AM + PM) %>%
+  pivot_longer(AM:Day,
+               names_to = "Session",
+               values_to = "avg_vol") 
+
+## Merge with Visits/Room/Day Benchmark
+location_util_merged$Benchmark <- visits_room_day_benchmarks$Benchmark[match(location_util_merged$Campus.Specialty,
+                                                                             visits_room_day_benchmarks$Campus.Specialty)]
+
+
+```
+
+
+```{r Output Pre Calulated Data to Server, echo = FALSE, warning = FALSE, message = FALSE}
+
+# Volume Tables ----------------------------------------------------------------
+## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
+saveRDS(monthly_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_volume_tbl.rds")
+
+## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
+saveRDS(vol_zip_code, "/nfs/data/Applications/Ambulatory/Quarterly_Data/vol_zipCode_tbl.rds")
+
+# Access Tables ----------------------------------------------------------------
+## Wait Time Horizon by Specialty
+saveRDS(waitTime_dist_specialty, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_dist_specialty_tbl.rds")
+
+## Median Wait Time
+saveRDS(waitTime_mshs, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_mshs_tbl.rds") # By MSHS Specialty (Exc. MSDD and Network)
+saveRDS(waitTime_site, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_site_tbl.rds") # By Specialty and Site
+saveRDS(waitTime_prov, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_prov_tbl.rds") # By Specialty and Provider
+
+```
+
+
+>>>>>>> 142bd517de71ec6d43ecbf290f20d629f8a7d8c8
