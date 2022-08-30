@@ -958,27 +958,27 @@ payer_mix_quarter_site <- scheduling_data_raw %>%
 ```{r Output Utilization Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Referrals Tables -------------------------------------------------------------
-saveRDS(monthly_referral_vol, "monthly_referral_vol.rds")
+saveRDS(monthly_referral_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_referral_vol.rds")
 
 
 # Volume Tables ----------------------------------------------------------------
 ## Arrived monthly volume ======================================================
-saveRDS(monthly_vol, "monthly_vol.rds")
+saveRDS(monthly_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_vol.rds")
 ## Arrived Epic department quarterly volume ====================================
-saveRDS(vol_zip_code, "vol_zip_code.rds")
+saveRDS(vol_zip_code, "/nfs/data/Applications/Ambulatory/Quarterly_Data/vol_zip_code.rds")
 
 # Access Tables ----------------------------------------------------------------
 ## Wait Time Horizon by Specialty
-saveRDS(waitTime_dist_specialty, "waitTime_dist_specialty.rds")
-saveRDS(waitTime_dist_site, "waitTime_dist_site.rds")
+saveRDS(waitTime_dist_specialty, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_dist_specialty.rds")
+saveRDS(waitTime_dist_site, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_dist_site.rds")
 
 ## Median Wait Time
-saveRDS(waitTime_mshs, "waitTime_mshs.rds") # By MSHS Specialty (Exc. MSDD and Network)
-saveRDS(waitTime_site, "waitTime_site.rds") # By Specialty and Site
-saveRDS(waitTime_prov, "waitTime_prov.rds") # By Specialty and Provider
+saveRDS(waitTime_mshs, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_mshs.rds") # By MSHS Specialty (Exc. MSDD and Network)
+saveRDS(waitTime_site, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_site.rds") # By Specialty and Site
+saveRDS(waitTime_prov, "/nfs/data/Applications/Ambulatory/Quarterly_Data/waitTime_prov.rds") # By Specialty and Provider
 
 # Payor Mix Table --------------------------------------------------------------
-saveRDS(payer_mix_quarter_site, "payer_mix_quarter_site.rds")
+saveRDS(payer_mix_quarter_site, "/nfs/data/Applications/Ambulatory/Quarterly_Data/payer_mix_quarter_site.rds")
 
 
 # # Utilization Data -------------------------------------------------------------
