@@ -120,35 +120,35 @@ quarter_end <- "2022-07-01"
 
 ```{r Import Raw Scheduling Data, echo = FALSE, warning = FALSE, message = FALSE}
 
-# scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
-# scheduling_data_raw <- scheduling_data_raw %>%
-#   filter(!is.na(Campus)) %>%
-#   filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
-#   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end)
-# 
-# 
-# scheduling_data_raw <- scheduling_data_raw %>% 
-#   mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
-#          Appt.YearQtr = as.yearqtr(Appt.DTTM),
-#          Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
-#          Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'),
-#          New.PT2 = case_when(New.PT2 == "New" ~ 'New',TRUE ~ 'Established'),
-#          New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'),
-#          Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"),
-#          Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"),
-#          Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"),
-#          Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
-#          Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
-# 
-# 
-# # Departments Managed by Department 
-# # master_amb_mapping <- read_excel(file.choose())
-# master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_mapping.xlsx"))
-# 
-# scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$Department, master_amb_mapping$DEPARTMENT_NAME)]
-# scheduling_data_raw <- scheduling_data_raw %>%
-#   mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
-#   filter(Managed == "Department")
+scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
+scheduling_data_raw <- scheduling_data_raw %>%
+  filter(!is.na(Campus)) %>%
+  filter(Campus %in% c("NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end)
+
+
+scheduling_data_raw <- scheduling_data_raw %>% 
+  mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
+         Appt.YearQtr = as.yearqtr(Appt.DTTM),
+         Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
+         Visit.Method  = case_when(Visit.Method == "IN PERSON" ~ 'IN PERSON',TRUE ~ 'TELEHEALTH'),
+         New.PT2 = case_when(New.PT2 == "New" ~ 'New',TRUE ~ 'Established'),
+         New.PT3 = case_when(New.PT3 == "TRUE" ~ 'New',TRUE ~ 'Established'),
+         Appt.Made.DateYear = as.Date(Appt.Made.DTTM, format="%Y-%m-%d"),
+         Appt.Made.MonthYear = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y-%m"),
+         Appt.Made.Year = format(as.Date(Appt.Made.DTTM, format="%m/%d/%Y"), "%Y"),
+         Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
+         Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
+
+
+# Departments Managed by Department 
+# master_amb_mapping <- read_excel(file.choose())
+master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_mapping.xlsx"))
+
+scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$Department, master_amb_mapping$DEPARTMENT_NAME)]
+scheduling_data_raw <- scheduling_data_raw %>%
+  mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
+  filter(Managed == "Department")
 
 # Departments Managed by Site
 
