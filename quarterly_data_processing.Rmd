@@ -155,6 +155,14 @@ scheduling_data_raw <- scheduling_data_raw %>%
 ```
 
 
+```{r Manual Correction for Cardiovascular Surgery, echo = FALSE, warning = FALSE, message = FALSE}
+
+scheduling_data_raw <- scheduling_data_raw %>%
+  mutate(Campus.Specialty = ifelse(Department == "1190 5TH CARDIO SURG", "Cardiovascular Surgery", Campus.Specialty))
+
+```
+
+
 ```{r Import Raw Slot Data, echo = FALSE, warning = FALSE, message = FALSE}
 
 # slot_data_raw <- as.data.frame(readRDS(file.choose())) %>%
