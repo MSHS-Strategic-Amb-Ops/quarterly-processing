@@ -271,10 +271,10 @@ scheduling_data_raw <- scheduling_data_raw %>%
 ```{r Epic Referrals Data, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Connect to the Server
-conn1 <- odbcConnect("SQLServer_Caboodle")
+conn1 <- dbConnect(odbc(), "Caboodle")
 
 # Import Referrals Table
-referrals <- sqlQuery(conn1, "SELECT * FROM PRDREPORT.FullAccess.Referrals")
+referrals <- dbGetQuery(conn1, "SELECT * FROM PRDREPORT.FullAccess.Referrals")
 
 ```
 
