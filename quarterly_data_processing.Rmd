@@ -302,7 +302,7 @@ dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_
 visitPlan <- read_csv("/nfs/data/Applications/Ambulatory/Visit Plans.csv")
 # epic_specialty_mapping <- read_csv("/nfs/data/Applications/Ambulatory/Epic_Specialty_Mapping.csv")
 
-site_dept_mapping <- unique(scheduling_data_raw[,c("Campus","Campus.Specialty","Department")])
+# site_dept_mapping <- unique(scheduling_data_raw[,c("Campus","Campus.Specialty","Department")])
 
 ```
 
