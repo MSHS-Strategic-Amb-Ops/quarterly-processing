@@ -124,7 +124,7 @@ scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/h
 # scheduling_data_raw <- readRDS(file.choose())
 scheduling_data_raw <- scheduling_data_raw %>%
   filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NYEE","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end)
 
 
@@ -335,8 +335,9 @@ referrals <- merge(referrals,
 # Referrals Data - Departments Managed by Department
 referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$`Department ID`)]
 referrals <- referrals %>%
-  mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
-  filter(Managed == "Department")
+  # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
+  filter(Managed == "Department") %>%
+  filter(ReceivedSite %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
 
 # Appointment Status Grouping
 referrals_processed <- referrals %>%
