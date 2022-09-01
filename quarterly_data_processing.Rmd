@@ -120,15 +120,10 @@ quarter_end <- "2022-07-01"
 
 ```{r Import Raw Scheduling Data, echo = FALSE, warning = FALSE, message = FALSE}
 
-# scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
-scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data/historical_data.rds")
+scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
+# scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data/historical_data.rds")
 
 # scheduling_data_raw <- readRDS(file.choose())
-scheduling_data_raw <- scheduling_data_raw %>%
-  filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
-  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end)
-
 
 scheduling_data_raw <- scheduling_data_raw %>% 
   mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
@@ -151,15 +146,15 @@ master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulator
 # master_amb_mapping <- read_excel(file.choose())
 
 ## Departments Managed by Department vs. Site
-scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$DepartmentId, master_amb_mapping$`Department ID`)]
+scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$Department, master_amb_mapping$Department)]
 scheduling_data_raw <- scheduling_data_raw %>%
   # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
   filter(Managed == "Department")
 
 ## Manual Mapping of Specialty and Site 
-scheduling_data_raw$Campus.Specialty <- master_amb_mapping$Specialty[match(scheduling_data_raw$DepartmentId, master_amb_mapping$`Department ID`)]
+scheduling_data_raw$Campus.Specialty <- master_amb_mapping$Specialty[match(scheduling_data_raw$Department, master_amb_mapping$Department)]
 
-scheduling_data_raw$Campus <- master_amb_mapping$Site[match(scheduling_data_raw$DepartmentId, master_amb_mapping$`Department ID`)]
+scheduling_data_raw$Campus <- master_amb_mapping$Site[match(scheduling_data_raw$Department, master_amb_mapping$Department)]
 
 ```
 
@@ -315,8 +310,8 @@ site_dept_mapping <- unique(scheduling_data_raw[,c("Campus","Campus.Specialty","
 ```{r Schduling Data Mapping, echo = FALSE, warning = FALSE, message = FALSE}
 
 scheduling_data_raw <- merge(scheduling_data_raw, 
-                             master_amb_mapping[,c("Department ID","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
-                             by.x = "DepartmentId", by.y = "Department ID") # Map Specialty Groups
+                             master_amb_mapping[,c("Department","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
+                             by = "Department") # Map Specialty Groups
 scheduling_data_raw$Coverage <- visitPlan$VisitPlan_Group[match(scheduling_data_raw$VISITPLAN, visitPlan$VISITPLAN)] # Map Visit Plan
 
 ```
@@ -331,8 +326,8 @@ referrals$ReceivedSite <- master_amb_mapping$Site[match(referrals$ReceivedByDepI
 referrals$ReceivedSpecialty <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$`Department ID`)]
 
 referrals <- merge(referrals, 
-                   master_amb_mapping[,c("Department ID","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
-                   by.x = "ReceivedByDepID", by.y = "Department ID") # Map Specialty Groups
+                   master_amb_mapping[,c("Department","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
+                   by.x = "ReceivedByDept", by.y = "Department") # Map Specialty Groups
 
 # Referrals Data - Departments Managed by Department
 referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$`Department ID`)]
@@ -395,6 +390,8 @@ monthly_referral_vol <- referrals_processed %>%
 ## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
 monthly_vol <- scheduling_data_raw %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(!is.na(Campus)) %>%
+  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.Status == "Arrived") %>%
   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
@@ -418,8 +415,9 @@ monthly_vol <- monthly_vol %>%
 
 ## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
 vol_zip_code <- scheduling_data_raw %>%
-  filter(Campus %!in% c("MSDD","NETWORK")) %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(!is.na(Campus)) %>%
+  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Appt.Status == "Arrived") 
 
 
@@ -443,7 +441,7 @@ vol_zip_code <- vol_zip_code %>%
 waitTime_dist_specialty <- scheduling_data_raw %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
-  filter(Campus %in% c("MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
@@ -457,6 +455,7 @@ waitTime_dist_specialty <- scheduling_data_raw %>%
 waitTime_dist_site <- scheduling_data_raw %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
+  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Campus, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
@@ -469,7 +468,7 @@ waitTime_dist_site <- scheduling_data_raw %>%
 ## Median Wait Time ============================================================
 ### By Specialty
 waitTime_mshs <- scheduling_data_raw %>%
-  filter(Campus %in% c("MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
@@ -478,6 +477,7 @@ waitTime_mshs <- scheduling_data_raw %>%
 ### By Specialty and Site
 waitTime_site <- scheduling_data_raw %>%
   filter(Wait.Time >= 0) %>%
+  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, Campus, New.PT2) %>%
   summarise(med_wait = median(Wait.Time, na.rm = TRUE))
@@ -609,6 +609,7 @@ waitTime_prov <- scheduling_data_raw %>%
 
 payer_mix_quarter_site <- scheduling_data_raw %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Appt.Status == "Arrived") %>%
   mutate(Coverage = ifelse(is.na(Coverage),"Other",Coverage)) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Campus, Appt.YearQtr, Coverage) %>%
