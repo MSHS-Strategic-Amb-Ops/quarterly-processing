@@ -146,15 +146,15 @@ master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulator
 # master_amb_mapping <- read_excel(file.choose())
 
 ## Departments Managed by Department vs. Site
-scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$Department, master_amb_mapping$Department)]
+scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
 scheduling_data_raw <- scheduling_data_raw %>%
   # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
   filter(Managed == "Department")
 
 ## Manual Mapping of Specialty and Site 
-scheduling_data_raw$Campus.Specialty <- master_amb_mapping$Specialty[match(scheduling_data_raw$Department, master_amb_mapping$Department)]
+scheduling_data_raw$Campus.Specialty <- master_amb_mapping$Specialty[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
 
-scheduling_data_raw$Campus <- master_amb_mapping$Site[match(scheduling_data_raw$Department, master_amb_mapping$Department)]
+scheduling_data_raw$Campus <- master_amb_mapping$Site[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
 
 ```
 
@@ -310,8 +310,8 @@ site_dept_mapping <- unique(scheduling_data_raw[,c("Campus","Campus.Specialty","
 ```{r Schduling Data Mapping, echo = FALSE, warning = FALSE, message = FALSE}
 
 scheduling_data_raw <- merge(scheduling_data_raw, 
-                             master_amb_mapping[,c("Department","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
-                             by = "Department") # Map Specialty Groups
+                             master_amb_mapping[,c("DepartmentId","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
+                             by = "DepartmentId") # Map Specialty Groups
 scheduling_data_raw$Coverage <- visitPlan$VisitPlan_Group[match(scheduling_data_raw$VISITPLAN, visitPlan$VISITPLAN)] # Map Visit Plan
 
 ```
@@ -319,18 +319,18 @@ scheduling_data_raw$Coverage <- visitPlan$VisitPlan_Group[match(scheduling_data_
 
 ```{r Referrals Data Mapping, echo = FALSE, warning = FALSE, message = FALSE}
 
-referrals$SentSite <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$`Department ID`)]
-referrals$SentSpecialty <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$`Department ID`)]
+referrals$SentSite <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$DepartmentId)]
+referrals$SentSpecialty <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$DepartmentId)]
 
-referrals$ReceivedSite <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$`Department ID`)]
-referrals$ReceivedSpecialty <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$`Department ID`)]
+referrals$ReceivedSite <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
+referrals$ReceivedSpecialty <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
 
 referrals <- merge(referrals, 
-                   master_amb_mapping[,c("Department","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
-                   by.x = "ReceivedByDept", by.y = "Department") # Map Specialty Groups
+                   master_amb_mapping[,c("DepartmentId","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
+                   by.x = "ReceivedByDept", by.y = "DepartmentId") # Map Specialty Groups
 
 # Referrals Data - Departments Managed by Department
-referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$`Department ID`)]
+referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
 referrals <- referrals %>%
   # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
   filter(Managed == "Department") %>%
