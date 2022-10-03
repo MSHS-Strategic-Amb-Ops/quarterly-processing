@@ -113,7 +113,7 @@ not_all_na <- function(x) all(!is.na(x)) # Exclude columns with All NAs
 ```{r Processing Variables, echo = FALSE, warning = FALSE, message = FALSE}
 
 quarter_start <- "2021-01-01"
-quarter_end <- "2022-07-01"
+quarter_end <- "2022-10-01"
 
 ```
 
@@ -123,7 +123,7 @@ quarter_end <- "2022-07-01"
 scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
 # scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data/historical_data.rds")
 
-# scheduling_data_raw <- readRDS(file.choose())
+scheduling_data_raw <- readRDS(file.choose())
 
 scheduling_data_raw <- scheduling_data_raw %>% 
   mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
@@ -138,6 +138,8 @@ scheduling_data_raw <- scheduling_data_raw %>%
          Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
          Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
 
+obgyn <- scheduling_data_raw %>%
+  filter(Campus.Specialty %in% c("OB/Gyn"))
 
  
 # Master Ambulatory Mapping 
@@ -327,7 +329,7 @@ referrals$ReceivedSpecialty <- master_amb_mapping$Site[match(referrals$ReceivedB
 
 referrals <- merge(referrals, 
                    master_amb_mapping[,c("DepartmentId","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
-                   by.x = "ReceivedByDept", by.y = "DepartmentId") # Map Specialty Groups
+                   by.x = "ReceivedByDepID", by.y = "DepartmentId") # Map Specialty Groups
 
 # Referrals Data - Departments Managed by Department
 referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
