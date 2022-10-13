@@ -143,6 +143,8 @@ scheduling_data_raw <- scheduling_data_raw %>%
 # master_amb_mapping <- read_excel(file.choose())
 master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_mapping.xlsx"))
 # master_amb_mapping <- read_excel(file.choose())
+master_amb_mapping <- master_amb_mapping %>%
+  mutate(Site = toupper(Site))
 
 ## Departments Managed by Department vs. Site
 scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
@@ -351,7 +353,7 @@ referrals_processed <- referrals %>%
 
 ```{r Conversion Rate, echo = FALSE, warning = FALSE, message = FALSE}
 
-# Referrals Conversion RAte
+# Referrals Conversion Rate
 monthly_referral_vol <- referrals_processed %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, ReceivedSite, ReceivedByDept, StartInstant, ApptStatusFinal) %>%
   summarise(total = n()) %>%
