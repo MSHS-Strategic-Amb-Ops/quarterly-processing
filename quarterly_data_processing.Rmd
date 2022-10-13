@@ -138,9 +138,6 @@ scheduling_data_raw <- scheduling_data_raw %>%
          Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
          Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
 
-obgyn <- scheduling_data_raw %>%
-  filter(Campus.Specialty %in% c("OB/Gyn"))
-
  
 # Master Ambulatory Mapping 
 # master_amb_mapping <- read_excel(file.choose())
