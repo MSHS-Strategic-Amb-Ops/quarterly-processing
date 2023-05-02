@@ -112,8 +112,8 @@ not_all_na <- function(x) all(!is.na(x)) # Exclude columns with All NAs
 
 ```{r Processing Variables, echo = FALSE, warning = FALSE, message = FALSE}
 
-quarter_start <- "2021-01-01"
-quarter_end <- "2022-10-01"
+quarter_start <- "2022-01-01"
+quarter_end <- "2023-04-01"
 
 ```
 
