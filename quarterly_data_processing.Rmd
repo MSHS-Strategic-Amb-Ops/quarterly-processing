@@ -123,7 +123,7 @@ quarter_end <- "2023-04-01"
 scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
 # scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data/historical_data.rds")
 
-scheduling_data_raw <- readRDS(file.choose())
+# scheduling_data_raw <- readRDS(file.choose())
 
 scheduling_data_raw <- scheduling_data_raw %>% 
   mutate(Campus = case_when(Campus == "MSDD" ~ "MSDMG",
