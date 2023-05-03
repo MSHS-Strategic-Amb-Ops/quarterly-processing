@@ -123,7 +123,7 @@ quarter_end <- "2023-04-01"
 scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
 # scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data/historical_data.rds")
 
-# scheduling_data_raw <- readRDS(file.choose())
+scheduling_data_raw <- readRDS(file.choose())
 
 scheduling_data_raw <- scheduling_data_raw %>% 
   mutate(Campus = case_when(Campus == "MSDD" ~ "MSDMG",
@@ -146,7 +146,7 @@ scheduling_data_raw <- scheduling_data_raw %>%
 master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_mapping.xlsx"))
 # master_amb_mapping <- read_excel(file.choose())
 master_amb_mapping <- master_amb_mapping %>%
-  mutate(Site = toupper(Site))
+  mutate(Site = toupper(Site)) 
 
 ## Departments Managed by Department vs. Site
 scheduling_data_raw$Managed <- master_amb_mapping$`Managed by Department or Site`[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
@@ -155,9 +155,9 @@ scheduling_data_raw <- scheduling_data_raw %>%
   filter(Managed == "Department")
 
 ## Manual Mapping of Specialty and Site 
-scheduling_data_raw$Campus.Specialty <- master_amb_mapping$Specialty[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
-
-scheduling_data_raw$Campus <- master_amb_mapping$Site[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
+# scheduling_data_raw$Campus.Specialty <- master_amb_mapping$Specialty[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
+# 
+# scheduling_data_raw$Campus <- master_amb_mapping$Site[match(scheduling_data_raw$DepartmentId, master_amb_mapping$DepartmentId)]
 
 ```
 
