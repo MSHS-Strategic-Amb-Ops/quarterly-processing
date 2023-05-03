@@ -277,11 +277,11 @@ scheduling_data_raw <- scheduling_data_raw %>%
 
 ```{r Epic Referrals Data, echo = FALSE, warning = FALSE, message = FALSE}
 
-# # Connect to the Server
-# conn1 <- dbConnect(odbc(), "Caboodle")
-# 
-# # Import Referrals Table
-# referrals <- dbGetQuery(conn1, "SELECT * FROM PRDREPORT.FullAccess.Referrals")
+# Connect to the Server
+conn1 <- dbConnect(odbc(), "Caboodle")
+
+# Import Referrals Table
+referrals <- dbGetQuery(conn1, "SELECT * FROM PRDREPORT.FullAccess.Referrals")
 
 ```
 
@@ -322,65 +322,65 @@ scheduling_data_raw$Coverage <- visitPlan$VisitPlan_Group[match(scheduling_data_
 
 ```{r Referrals Data Mapping, echo = FALSE, warning = FALSE, message = FALSE}
 
-# referrals$SentSite <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$DepartmentId)]
-# referrals$SentSpecialty <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$DepartmentId)]
-# 
-# referrals$ReceivedSite <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
-# referrals$ReceivedSpecialty <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
-# 
-# referrals <- merge(referrals, 
-#                    master_amb_mapping[,c("DepartmentId","Campus.Specialty.Group","Campus.Specialty.SubGroup")], 
-#                    by.x = "ReceivedByDepID", by.y = "DepartmentId") # Map Specialty Groups
-# 
-# # Referrals Data - Departments Managed by Department
-# referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
-# referrals <- referrals %>%
-#   # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
-#   filter(Managed == "Department") %>%
-#   filter(ReceivedSite %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
-# 
-# # Appointment Status Grouping
-# referrals_processed <- referrals %>%
-#   filter(Status != "Canceled") %>%
-#   group_by(ReferralKey) %>%
-#   mutate(ApptStatusFinal = NA) %>%
-#   mutate(ApptStatusFinal = case_when((is.na(ApptStatusFinal) & any(AppointmentStatus %in% c("Arrived","Completed"))) ~ "Arrived"
-#                                      ,(is.na(ApptStatusFinal) & any(AppointmentStatus %in% c("No Show", "Left without seen"))) ~ "No Show"
-#                                      ,(is.na(ApptStatusFinal) & any(AppointmentStatus == "Canceled")) ~ "Canceled"
-#                                      ,(is.na(ApptStatusFinal) & any(AppointmentStatus %in% c("Scheduled","Confirmed"))) ~ "Scheduled"
-#                                      ,TRUE ~ "Pending"))
+referrals$SentSite <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$DepartmentId)]
+referrals$SentSpecialty <- master_amb_mapping$Site[match(referrals$SentByDepID, master_amb_mapping$DepartmentId)]
+
+referrals$ReceivedSite <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
+referrals$ReceivedSpecialty <- master_amb_mapping$Site[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
+
+referrals <- merge(referrals,
+                   master_amb_mapping[,c("DepartmentId","Campus.Specialty.Group","Campus.Specialty.SubGroup")],
+                   by.x = "ReceivedByDepID", by.y = "DepartmentId") # Map Specialty Groups
+
+# Referrals Data - Departments Managed by Department
+referrals$Managed <- master_amb_mapping$`Managed by Department or Site`[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
+referrals <- referrals %>%
+  # mutate(Managed = ifelse(is.na(Managed), "Department", Managed)) %>%
+  filter(Managed == "Department") %>%
+  filter(ReceivedSite %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD"))
+
+# Appointment Status Grouping
+referrals_processed <- referrals %>%
+  filter(Status != "Canceled") %>%
+  group_by(ReferralKey) %>%
+  mutate(ApptStatusFinal = NA) %>%
+  mutate(ApptStatusFinal = case_when((is.na(ApptStatusFinal) & any(AppointmentStatus %in% c("Arrived","Completed"))) ~ "Arrived"
+                                     ,(is.na(ApptStatusFinal) & any(AppointmentStatus %in% c("No Show", "Left without seen"))) ~ "No Show"
+                                     ,(is.na(ApptStatusFinal) & any(AppointmentStatus == "Canceled")) ~ "Canceled"
+                                     ,(is.na(ApptStatusFinal) & any(AppointmentStatus %in% c("Scheduled","Confirmed"))) ~ "Scheduled"
+                                     ,TRUE ~ "Pending"))
 
 ```
 
 
 ```{r Conversion Rate, echo = FALSE, warning = FALSE, message = FALSE}
 
-# # Referrals Conversion Rate
-# monthly_referral_vol <- referrals_processed %>%
-#   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, ReceivedSite, ReceivedByDept, StartInstant, ApptStatusFinal) %>%
-#   summarise(total = n()) %>%
-#   mutate(Received.DateYear = as.Date(StartInstant, format="%Y-%m-%d"),
-#          Received.MonthYear = format(Received.DateYear, "%Y-%m"), ## Create month - year column
-#          Received.Year = format(Received.DateYear, "%Y"), ## Create year column
-#          Received.Month = format(Received.DateYear, "%b"), ## Create month colunm
-#          Received.YearQtr = as.yearqtr(Received.DateYear)) %>%
-#   group_by(ReceivedSite, Campus.Specialty.Group, Campus.Specialty.SubGroup, Received.Year, Received.YearQtr, Received.Month, ApptStatusFinal) %>%
-#   rename(Campus = ReceivedSite) %>%
-#   summarise(total = n())
+# Referrals Conversion Rate
+monthly_referral_vol <- referrals_processed %>%
+  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, ReceivedSite, ReceivedByDept, StartInstant, ApptStatusFinal) %>%
+  summarise(total = n()) %>%
+  mutate(Received.DateYear = as.Date(StartInstant, format="%Y-%m-%d"),
+         Received.MonthYear = format(Received.DateYear, "%Y-%m"), ## Create month - year column
+         Received.Year = format(Received.DateYear, "%Y"), ## Create year column
+         Received.Month = format(Received.DateYear, "%b"), ## Create month colunm
+         Received.YearQtr = as.yearqtr(Received.DateYear)) %>%
+  group_by(ReceivedSite, Campus.Specialty.Group, Campus.Specialty.SubGroup, Received.Year, Received.YearQtr, Received.Month, ApptStatusFinal) %>%
+  rename(Campus = ReceivedSite) %>%
+  summarise(total = n())
 
 
 # Referrals Wait Time
-# referral_waitTime_quarter <- referrals %>%
-#   dplyr::select(Campus, Campus.Specialty.Group, Campus.Specialty.SubGroup, ReceivedBySite, ReceivedByDept, EncounterEpicCsn, AppointmentStatus, 
-#                 StartInstant, CreationToFirstEncounterDate, CreationToScheduledDate) %>%
-#   filter(!is.na(AppointmentStatus)) %>%
-#   mutate(Received.DateYear = as.Date(StartInstant, format="%Y-%m-%d"),
-#          Received.MonthYear = format(Received.DateYear, "%Y-%m"), ## Create month - year column
-#          Received.Year = format(Received.DateYear, "%Y"), ## Create year column
-#          Received.Month = format(Received.DateYear, "%b"), ## Create month colunm
-#          Received.YearQtr = as.yearqtr(Received.DateYear)) %>%
-#   group_by(Campus, Campus.Specialty.Group, Campus.Specialty.SubGroup, Received.Year, Received.YearQtr) %>%
-#   summarise(waitTime = median(CreationToScheduledDate, na.rm = TRUE))
+referral_waitTime_quarter <- referrals %>%
+  dplyr::select(Campus, Campus.Specialty.Group, Campus.Specialty.SubGroup, ReceivedBySite, ReceivedByDept, EncounterEpicCsn, AppointmentStatus,
+                StartInstant, CreationToFirstEncounterDate, CreationToScheduledDate) %>%
+  filter(!is.na(AppointmentStatus)) %>%
+  mutate(Received.DateYear = as.Date(StartInstant, format="%Y-%m-%d"),
+         Received.MonthYear = format(Received.DateYear, "%Y-%m"), ## Create month - year column
+         Received.Year = format(Received.DateYear, "%Y"), ## Create year column
+         Received.Month = format(Received.DateYear, "%b"), ## Create month colunm
+         Received.YearQtr = as.yearqtr(Received.DateYear)) %>%
+  group_by(Campus, Campus.Specialty.Group, Campus.Specialty.SubGroup, Received.Year, Received.YearQtr) %>%
+  summarise(waitTime = median(CreationToScheduledDate, na.rm = TRUE))
   
 
 
@@ -983,7 +983,7 @@ payer_mix_quarter_site <- scheduling_data_raw %>%
 ```{r Output Utilization Data Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Referrals Tables -------------------------------------------------------------
-# saveRDS(monthly_referral_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_referral_vol.rds")
+saveRDS(monthly_referral_vol, "/nfs/data/Applications/Ambulatory/Quarterly_Data/monthly_referral_vol.rds")
 
 
 # Volume Tables ----------------------------------------------------------------
