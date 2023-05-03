@@ -126,6 +126,8 @@ scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/h
 # scheduling_data_raw <- readRDS(file.choose())
 
 scheduling_data_raw <- scheduling_data_raw %>% 
+  mutate(Campus = case_when(Campus == "MSDD" ~ "MSDMG",
+                            TRUE ~ Campus)) %>%
   mutate(Appt.WeekNum = lubridate::epiweek(Appt.DateYear),
          Appt.YearQtr = as.yearqtr(Appt.DTTM),
          Appt.Made.YearQtr = as.yearqtr(Appt.Made.DTTM),
