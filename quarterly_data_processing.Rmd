@@ -464,7 +464,7 @@ monthly_referral_vol <- referrals %>%
 monthly_vol <- scheduling_data_raw %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
   filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.Status == "Arrived") %>%
   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
@@ -497,7 +497,7 @@ monthly_vol_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
   filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.Status == "Arrived") %>%
   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
@@ -505,7 +505,7 @@ monthly_vol_office <- scheduling_data_raw %>%
   summarise(monthly_vol = n())
 # # Merge with Rad Onc and Radiology Data
 # monthly_vol <- bind_rows(monthly_vol, rad_radOnc_data)
-monthly_vol_office <- monthly_vol %>%
+monthly_vol_office <- monthly_vol_office %>%
   # dplyr::select(-Month) %>%
   pivot_wider(
     names_from = Visit.Method,
@@ -528,7 +528,7 @@ monthly_vol_office <- monthly_vol %>%
 vol_zip_code <- scheduling_data_raw %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
   filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  # filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Appt.Status == "Arrived") 
 
 
@@ -552,7 +552,7 @@ vol_zip_code_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
   filter(!is.na(Campus)) %>%
-  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  # filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Appt.Status == "Arrived") 
 
 vol_zip_code_office$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code_office$Department, dept_zip_code_ref$`Department Name`)]
@@ -574,7 +574,7 @@ vol_zip_code_office <- vol_zip_code_office %>%
 waitTime_dist_specialty <- scheduling_data_raw %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
@@ -588,7 +588,7 @@ waitTime_dist_specialty <- scheduling_data_raw %>%
 waitTime_dist_site <- scheduling_data_raw %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Campus, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
@@ -601,7 +601,7 @@ waitTime_dist_site <- scheduling_data_raw %>%
 ## Median Wait Time ============================================================
 ### By Specialty
 waitTime_mshs <- scheduling_data_raw %>%
-  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  # filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
@@ -610,7 +610,7 @@ waitTime_mshs <- scheduling_data_raw %>%
 ### By Specialty and Site
 waitTime_site <- scheduling_data_raw %>%
   filter(Wait.Time >= 0) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, Campus, New.PT2) %>%
   summarise(med_wait = median(Wait.Time, na.rm = TRUE))
@@ -634,7 +634,7 @@ waitTime_dist_specialty_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
@@ -649,7 +649,7 @@ waitTime_dist_site_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Campus, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
   mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
@@ -663,7 +663,7 @@ waitTime_dist_site_office <- scheduling_data_raw %>%
 ### By Specialty
 waitTime_mshs_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
-  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  # filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Wait.Time >= 0) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
@@ -673,7 +673,7 @@ waitTime_mshs_office <- scheduling_data_raw %>%
 waitTime_site_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
   filter(Wait.Time >= 0) %>%
-  filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
+  # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, Campus, New.PT2) %>%
   summarise(med_wait = median(Wait.Time, na.rm = TRUE))
@@ -805,7 +805,7 @@ waitTime_prov_office <- scheduling_data_raw %>%
 
 payer_mix_quarter_site <- scheduling_data_raw %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  # filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Appt.Status == "Arrived") %>%
   mutate(Coverage = ifelse(is.na(Coverage),"Other",Coverage)) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Campus, Appt.YearQtr, Coverage) %>%
@@ -820,7 +820,7 @@ payer_mix_quarter_site <- scheduling_data_raw %>%
 payer_mix_quarter_site_office <- scheduling_data_raw %>%
   filter(Office == "Office") %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-  filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
+  # filter(Campus %in% c("NYEE","MSB","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE")) %>%
   filter(Appt.Status == "Arrived") %>%
   mutate(Coverage = ifelse(is.na(Coverage),"Other",Coverage)) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Campus, Appt.YearQtr, Coverage) %>%
