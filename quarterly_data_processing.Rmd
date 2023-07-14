@@ -126,8 +126,8 @@ prior_year <- as.numeric(format(as.Date(quarter_end), "%Y"))-1
 
 ```{r Import Raw Scheduling Data, echo = FALSE, warning = FALSE, message = FALSE}
 
-# scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
-scheduling_data_raw <- readRDS(file.choose())
+scheduling_data_raw <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/historical_data.rds")
+# scheduling_data_raw <- readRDS(file.choose())
 
 scheduling_data_raw <- scheduling_data_raw %>% 
   mutate(Campus = case_when(Campus == "MSDD" ~ "MSDMG",
@@ -148,8 +148,8 @@ scheduling_data_raw <- scheduling_data_raw %>%
 ```{r Map Campus.Specialty.Group, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Master Ambulatory Mapping ----------------------------------------------------
-# master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_mapping_updated.xlsx", col_types = "text")) 
-master_amb_mapping <- as.data.frame(read_excel(file.choose(), col_types = "text"))
+master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_mapping_updated.xlsx", col_types = "text"))
+# master_amb_mapping <- as.data.frame(read_excel(file.choose(), col_types = "text"))
 
 master_amb_mapping <- master_amb_mapping %>%
   mutate(CAMPUS = ifelse(is.na(`GROUPER 17 UPDATE`), CAMPUS, `GROUPER 17 UPDATE`))
@@ -184,8 +184,8 @@ scheduling_data_raw$Campus.Specialty.SubGroup <- master_amb_mapping$Campus.Speci
 ```{r Map Office vs. Procedure, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Mapping of Office vs. Procedure Encounters by Appt Type ----------------------
-# appt_type_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_appt_type_mapping.xlsx", col_types = "text")) 
-appt_type_mapping <- as.data.frame(read_excel(file.choose(), col_types = "text"))
+appt_type_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_appt_type_mapping.xlsx", col_types = "text"))
+# appt_type_mapping <- as.data.frame(read_excel(file.choose(), col_types = "text"))
 
 scheduling_data_raw <- left_join(scheduling_data_raw, appt_type_mapping, by = c("Campus.Specialty.Group" = "Campus.Specialty.Group",
                                                                                 "Appt.Type" = "Appointment type"))
@@ -196,16 +196,16 @@ scheduling_data_raw <- left_join(scheduling_data_raw, appt_type_mapping, by = c(
 ```{r Additional Mapping Files, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Department/Practice Zip Code Mapping 
-# dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv")
-dept_zip_code_ref <- read_csv(file.choose())
+dept_zip_code_ref <- read_csv("/nfs/data/Applications/Ambulatory/Department_Zip_Code.csv")
+# dept_zip_code_ref <- read_csv(file.choose())
 
 ```
 
 
 ```{r Import Processed Referrals Data, echo = FALSE, warning = FALSE, message = FALSE}
 
-# referrals <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/referral_vol.rds")
-referrals <- readRDS(file.choose())
+referrals <- readRDS("/nfs/data/Applications/Ambulatory/Data_Updated/referral_vol.rds")
+# referrals <- readRDS(file.choose())
 
 # Referrals Data Processing
 referrals$Managed <-  master_amb_mapping$Managed[match(referrals$ReceivedByDepID, master_amb_mapping$DepartmentId)]
