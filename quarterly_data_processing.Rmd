@@ -261,129 +261,6 @@ rm(referrals)
 ```
 
 
-```{r Volume Tables (All), echo = FALSE, warning = FALSE, message = FALSE}
-
-# Volume Tables ----------------------------------------------------------------
-## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
-monthly_vol <- scheduling_data_raw %>%
-  filter(Managed == "Department") %>%
-  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-  filter(!is.na(Site)) %>%
-  filter(Appt.Status == "Arrived") %>%
-  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
-         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
-  group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>%
-  summarise(monthly_vol = n())
-
-
-monthly_vol <- monthly_vol %>%
-  pivot_wider(
-    names_from = Visit.Method,
-    values_from = monthly_vol,
-    values_fill=list(monthly_vol=0)
-  ) %>%
-  mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>%
-  pivot_longer(
-    8:10,
-    names_to = "Visit.Method",
-    values_to = "monthly_vol"
-  )
-
-```
-```{r Volume Validation, echo = FALSE, warning = FALSE, message = FALSE}
-
-# # Volume Validation
-# vol_validation <- scheduling_data_raw %>%
-#   filter(Campus.Specialty.Group == "Cardiovascular Institute/Cardiology") %>%
-#   filter(Managed == "Department") %>%
-#   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-#   filter(!is.na(Site)) %>%
-#   filter(Appt.Status == "Arrived") %>%
-#   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
-#          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
-#   group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Department, Office, Classification, Appt.Year, Appt.MonNum, Appt.MonthYear, Appt.Type) %>%
-#   summarise(monthly_vol = n())
-# 
-# 
-# require(openxlsx)
-# write.xlsx(vol_validation, "Cardiology Volume by Department and Appt Type_UPDATED.xlsx")
-
-```
-
-
-```{r Volume Tables (Office), echo = FALSE, warning = FALSE, message = FALSE}
-
-# Volume Tables ----------------------------------------------------------------
-## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
-monthly_vol_office <- scheduling_data_raw %>%
-  filter(Managed == "Department") %>%
-  filter(Office == "Office") %>%
-  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-  filter(!is.na(Site)) %>%
-  filter(Appt.Status == "Arrived") %>%
-  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
-         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
-  group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>%
-  summarise(monthly_vol = n())
-
-
-monthly_vol_office <- monthly_vol_office %>%
-  pivot_wider(
-    names_from = Visit.Method,
-    values_from = monthly_vol,
-    values_fill=list(monthly_vol=0)
-  ) %>%
-  mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>%
-  pivot_longer(
-    8:10,
-    names_to = "Visit.Method",
-    values_to = "monthly_vol"
-  )
-
-```
-
-
-```{r Volume by Zipcode, echo = FALSE, warning = FALSE, message = FALSE}
-
-## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
-vol_zip_code_data <- scheduling_data_raw %>%
-  filter(Managed == "Department") %>%
-  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-  filter(!is.na(Site)) %>%
-  filter(Appt.Status == "Arrived") %>%
-  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
-         Appt.Month = strftime(Appt.DateYear, format = "%b"))
-
-
-dept_zip_code_ref$`Address Zip Code` <- gsub("\\-.*","",dept_zip_code_ref$`Address Zip Code`) # Remove trailing zip codes (anything after first 5-digit zip code)
-vol_zip_code_data$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code_data$Department, dept_zip_code_ref$`Department Name`)]
-
-
-coordinates <- geocode_zip(vol_zip_code_data$dept_zip_code)
-vol_zip_code_data <- merge(vol_zip_code_data, coordinates, by.x = c("dept_zip_code"), by.y = c("zipcode"), all.x = TRUE)
-
-
-vol_zip_code <- vol_zip_code_data %>%
-  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.YearQtr, Appt.MonNum, Appt.Month, dept_zip_code, lat, lng) %>%
-  summarise(total_vol = n()) %>%
-  mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))
-
-```
-
-
-```{r Volume by Zipcode (Office), echo = FALSE, warning = FALSE, message = FALSE}
-
-vol_zip_code_office <- vol_zip_code_data %>%
-  filter(Office == "Office") %>%
-  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.YearQtr, Appt.MonNum, Appt.Month, dept_zip_code, lat, lng) %>%
-  summarise(total_vol = n()) %>%
-  mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))
-
-
-rm(vol_zip_code_data)
-```
-
-
 ```{r Access Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 ## MSHS New Patient Wait Time Horizon ===============================================
@@ -1013,6 +890,129 @@ payer_mix_quarter_site <- scheduling_data_raw %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.YearQtr, Appt.MonNum, Appt.Month, Coverage) %>%
   summarise(payer = n())
 
+```
+
+
+```{r Volume Tables (All), echo = FALSE, warning = FALSE, message = FALSE}
+
+# Volume Tables ----------------------------------------------------------------
+## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
+monthly_vol <- scheduling_data_raw %>%
+  filter(Managed == "Department") %>%
+  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(!is.na(Site)) %>%
+  filter(Appt.Status == "Arrived") %>%
+  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
+         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
+  group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>%
+  summarise(monthly_vol = n())
+
+
+monthly_vol <- monthly_vol %>%
+  pivot_wider(
+    names_from = Visit.Method,
+    values_from = monthly_vol,
+    values_fill=list(monthly_vol=0)
+  ) %>%
+  mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>%
+  pivot_longer(
+    8:10,
+    names_to = "Visit.Method",
+    values_to = "monthly_vol"
+  )
+
+```
+```{r Volume Validation, echo = FALSE, warning = FALSE, message = FALSE}
+
+# # Volume Validation
+# vol_validation <- scheduling_data_raw %>%
+#   filter(Campus.Specialty.Group == "Cardiovascular Institute/Cardiology") %>%
+#   filter(Managed == "Department") %>%
+#   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+#   filter(!is.na(Site)) %>%
+#   filter(Appt.Status == "Arrived") %>%
+#   mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
+#          Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
+#   group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Department, Office, Classification, Appt.Year, Appt.MonNum, Appt.MonthYear, Appt.Type) %>%
+#   summarise(monthly_vol = n())
+# 
+# 
+# require(openxlsx)
+# write.xlsx(vol_validation, "Cardiology Volume by Department and Appt Type_UPDATED.xlsx")
+
+```
+
+
+```{r Volume Tables (Office), echo = FALSE, warning = FALSE, message = FALSE}
+
+# Volume Tables ----------------------------------------------------------------
+## Arrived monthly volume by Campus, Campus.Specialty, Department, Appt.YearQtr. Appt.MonNum, Appt.Month, Visit.Method, monthly_vol
+monthly_vol_office <- scheduling_data_raw %>%
+  filter(Managed == "Department") %>%
+  filter(Office == "Office") %>%
+  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(!is.na(Site)) %>%
+  filter(Appt.Status == "Arrived") %>%
+  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
+         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
+  group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Department, Appt.YearQtr, Appt.MonNum, Appt.Month, Visit.Method) %>%
+  summarise(monthly_vol = n())
+
+
+monthly_vol_office <- monthly_vol_office %>%
+  pivot_wider(
+    names_from = Visit.Method,
+    values_from = monthly_vol,
+    values_fill=list(monthly_vol=0)
+  ) %>%
+  mutate(Total = sum(`IN PERSON`, TELEHEALTH)) %>%
+  pivot_longer(
+    8:10,
+    names_to = "Visit.Method",
+    values_to = "monthly_vol"
+  )
+
+```
+
+
+```{r Volume by Zipcode, echo = FALSE, warning = FALSE, message = FALSE}
+
+## Arrived quarterly volume by Campus.Specialty, Appt.YearQtr, dept_zip_code, lat, lang, total_vol
+vol_zip_code_data <- scheduling_data_raw %>%
+  filter(Managed == "Department") %>%
+  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(!is.na(Site)) %>%
+  filter(Appt.Status == "Arrived") %>%
+  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
+         Appt.Month = strftime(Appt.DateYear, format = "%b"))
+
+
+dept_zip_code_ref$`Address Zip Code` <- gsub("\\-.*","",dept_zip_code_ref$`Address Zip Code`) # Remove trailing zip codes (anything after first 5-digit zip code)
+vol_zip_code_data$dept_zip_code <- dept_zip_code_ref$`Address Zip Code`[match(vol_zip_code_data$Department, dept_zip_code_ref$`Department Name`)]
+
+
+coordinates <- geocode_zip(vol_zip_code_data$dept_zip_code)
+vol_zip_code_data <- merge(vol_zip_code_data, coordinates, by.x = c("dept_zip_code"), by.y = c("zipcode"), all.x = TRUE)
+
+
+vol_zip_code <- vol_zip_code_data %>%
+  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.YearQtr, Appt.MonNum, Appt.Month, dept_zip_code, lat, lng) %>%
+  summarise(total_vol = n()) %>%
+  mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))
+
+```
+
+
+```{r Volume by Zipcode (Office), echo = FALSE, warning = FALSE, message = FALSE}
+
+vol_zip_code_office <- vol_zip_code_data %>%
+  filter(Office == "Office") %>%
+  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.YearQtr, Appt.MonNum, Appt.Month, dept_zip_code, lat, lng) %>%
+  summarise(total_vol = n()) %>%
+  mutate(dept_zip_code=factor(dept_zip_code, unique(dept_zip_code)))
+
+
+rm(vol_zip_code_data)
 ```
 
 
