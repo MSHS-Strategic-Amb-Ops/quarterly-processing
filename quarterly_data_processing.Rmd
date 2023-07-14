@@ -239,26 +239,26 @@ referrals <- referrals %>%
 ```
 
 
-```{r Conversion Rate, echo = FALSE, warning = FALSE, message = FALSE}
-
-# Referrals Conversion Rate
-monthly_referral_vol <- referrals %>%
-  filter(Managed == "Department") %>%
-  mutate(ReceivedBySite = ifelse(is.na(ReceivedBySite), "OTHER", ReceivedBySite)) %>%
-  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, ReceivedByDept, StartInstant, ApptStatusFinal) %>%
-  summarise(total = n()) %>%
-  mutate(Received.DateYear = as.Date(StartInstant, format="%Y-%m-%d"),
-         Received.MonthYear = format(Received.DateYear, "%Y-%m"), ## Create month - year column
-         Received.Year = format(Received.DateYear, "%Y"), ## Create year column
-         Received.Month = format(Received.DateYear, "%b"), ## Create month colunm
-         Received.MonNum = as.numeric(format(Received.DateYear, format = "%m")),
-         Received.YearQtr = as.yearqtr(Received.DateYear)) %>%
-  group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Received.Year, Received.YearQtr, Received.Month, Received.MonNum, ApptStatusFinal) %>%
-  summarise(total = n())
-
-
-rm(referrals)
-```
+# ```{r Conversion Rate, echo = FALSE, warning = FALSE, message = FALSE}
+# 
+# # Referrals Conversion Rate
+# monthly_referral_vol <- referrals %>%
+#   filter(Managed == "Department") %>%
+#   mutate(ReceivedBySite = ifelse(is.na(ReceivedBySite), "OTHER", ReceivedBySite)) %>%
+#   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, ReceivedByDept, StartInstant, ApptStatusFinal) %>%
+#   summarise(total = n()) %>%
+#   mutate(Received.DateYear = as.Date(StartInstant, format="%Y-%m-%d"),
+#          Received.MonthYear = format(Received.DateYear, "%Y-%m"), ## Create month - year column
+#          Received.Year = format(Received.DateYear, "%Y"), ## Create year column
+#          Received.Month = format(Received.DateYear, "%b"), ## Create month colunm
+#          Received.MonNum = as.numeric(format(Received.DateYear, format = "%m")),
+#          Received.YearQtr = as.yearqtr(Received.DateYear)) %>%
+#   group_by(Site, Campus.Specialty.Group, Campus.Specialty.SubGroup, Received.Year, Received.YearQtr, Received.Month, Received.MonNum, ApptStatusFinal) %>%
+#   summarise(total = n())
+# 
+# 
+# rm(referrals)
+# ```
 
 
 ```{r Access Tables, echo = FALSE, warning = FALSE, message = FALSE}
@@ -857,24 +857,34 @@ waitTime_prov_group_office_ytd <- scheduling_data_raw %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.Year, Provider, NPI) %>%
   summarise(med_wait = as.numeric(median(Wait.Time, na.rm = TRUE)))
 
-
-
-waitTime_mshs_group_office_ytd <- scheduling_data_raw %>%
-  filter(Managed == "Department") %>%
-  filter(Office == "Office") %>%
-  filter(!is.na(Site)) %>%
-  filter(Wait.Time >= 0) %>%
- mutate(Appt.Made.MonNum = as.numeric(format(as.Date(Appt.Made.DateYear), "%m"))) %>%
-  filter(Appt.Made.MonNum < as.numeric(format(as.Date(quarter_end), "%m"))) %>%
-  group_by(Campus.Specialty.Group, Appt.Made.Year, New.PT2) %>%
-  summarise(med_wait = median(Wait.Time, na.rm = TRUE))
-
 ```
 
 
 ```{r Payor Mix Table, echo = FALSE, warning = FALSE, message = FALSE}
 
 payer_mix_quarter_site <- scheduling_data_raw %>%
+  filter(Managed == "Department") %>%
+  filter(!is.na(Site)) %>%
+  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
+  filter(Appt.Status == "Arrived") %>%
+  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
+         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
+  mutate(Coverage = case_when(str_detect(Coverage, "Medicare") ~ "MEDICARE/ MEDICARE MANAGED",
+                              str_detect(Coverage, "Medicaid") ~ "MEDICAID / MEDICAID MANAGED",
+                              str_detect(Coverage, "Self") ~ "SELF-PAY",
+                              str_detect(Coverage, "Commercial") ~ "COMMERCIAL/ MANAGED CARE",
+                              str_detect(Coverage, "WTC") ~ "COMMERCIAL/ MANAGED CARE",
+                              TRUE ~ "OTHER")) %>%
+  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.YearQtr, Appt.MonNum, Appt.Month, Coverage) %>%
+  summarise(payer = n())
+
+```
+
+
+```{r Payor Mix Table (Office), echo = FALSE, warning = FALSE, message = FALSE}
+
+payer_mix_quarter_site_office <- scheduling_data_raw %>%
+  filter(Office == "Office") %>%
   filter(Managed == "Department") %>%
   filter(!is.na(Site)) %>%
   filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
@@ -1016,44 +1026,22 @@ rm(vol_zip_code_data)
 ```
 
 
-```{r Payor Mix Table (Office), echo = FALSE, warning = FALSE, message = FALSE}
-
-payer_mix_quarter_site_office <- scheduling_data_raw %>%
-  filter(Office == "Office") %>%
-  filter(Managed == "Department") %>%
-  filter(!is.na(Site)) %>%
-  filter(Appt.DateYear >= quarter_start & Appt.DateYear < quarter_end) %>%
-  filter(Appt.Status == "Arrived") %>%
-  mutate(Appt.MonNum = as.numeric(strftime(Appt.DateYear, format = "%m")),
-         Appt.Month = strftime(Appt.DateYear, format = "%b")) %>%
-  mutate(Coverage = case_when(str_detect(Coverage, "Medicare") ~ "MEDICARE/ MEDICARE MANAGED",
-                              str_detect(Coverage, "Medicaid") ~ "MEDICAID / MEDICAID MANAGED",
-                              str_detect(Coverage, "Self") ~ "SELF-PAY",
-                              str_detect(Coverage, "Commercial") ~ "COMMERCIAL/ MANAGED CARE",
-                              str_detect(Coverage, "WTC") ~ "COMMERCIAL/ MANAGED CARE",
-                              TRUE ~ "OTHER")) %>%
-  group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.YearQtr, Appt.MonNum, Appt.Month, Coverage) %>%
-  summarise(payer = n())
-
-```
-
-
 ```{r Local Output Data, echo = FALSE, warning = FALSE, message = FALSE}
 
 # save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
 save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
 
 # Referrals Tables -------------------------------------------------------------
-saveRDS(monthly_referral_vol, paste0(save_path,"monthly_referral_vol.rds"))
+# saveRDS(monthly_referral_vol, paste0(save_path,"monthly_referral_vol.rds"))
 
 
-# Volume Tables ----------------------------------------------------------------
-## Arrived monthly volume ======================================================
-saveRDS(monthly_vol, paste0(save_path,"monthly_vol.rds"))
-saveRDS(monthly_vol_office, paste0(save_path,"monthly_vol_office.rds"))
-## Arrived Epic department quarterly volume ====================================
-saveRDS(vol_zip_code, paste0(save_path,"vol_zip_code.rds"))
-saveRDS(vol_zip_code_office, paste0(save_path,"vol_zip_code_office.rds"))
+# # Volume Tables ----------------------------------------------------------------
+# ## Arrived monthly volume ======================================================
+# saveRDS(monthly_vol, paste0(save_path,"monthly_vol.rds"))
+# saveRDS(monthly_vol_office, paste0(save_path,"monthly_vol_office.rds"))
+# ## Arrived Epic department quarterly volume ====================================
+# saveRDS(vol_zip_code, paste0(save_path,"vol_zip_code.rds"))
+# saveRDS(vol_zip_code_office, paste0(save_path,"vol_zip_code_office.rds"))
 
 
 
@@ -1144,8 +1132,8 @@ saveRDS(waitTime_prov_group_office_ytd, paste0(save_path,"waitTime_prov_group_of
 
 
 
-# Payor Mix Table --------------------------------------------------------------
-saveRDS(payer_mix_quarter_site, paste0(save_path,"payer_mix_quarter_site.rds"))
-saveRDS(payer_mix_quarter_site_office, paste0(save_path,"payer_mix_quarter_site_office.rds"))
+# # Payor Mix Table --------------------------------------------------------------
+# saveRDS(payer_mix_quarter_site, paste0(save_path,"payer_mix_quarter_site.rds"))
+# saveRDS(payer_mix_quarter_site_office, paste0(save_path,"payer_mix_quarter_site_office.rds"))
 ```
 
