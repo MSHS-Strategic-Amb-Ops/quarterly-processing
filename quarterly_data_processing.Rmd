@@ -190,7 +190,7 @@ scheduling_data_raw$Campus.Specialty.SubGroup <- master_amb_mapping$Campus.Speci
 ```{r Map Sessional Provider Departments, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Mapping of sessional providers  ----------------------------------------------
-master_amb_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_sessional_provider_mapping.xlsx", col_types = "text"))
+sessional_prov_mapping <- as.data.frame(read_excel("/nfs/data/Applications/Ambulatory/master_amb_sessional_provider_mapping.xlsx", col_types = "text"))
 # sessional_prov_mapping <- as.data.frame(read_excel("C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/server-upload-updated/master_amb_sessional_provider_mapping.xlsx", col_types = "text"))
 
 scheduling_data_raw <- left_join(scheduling_data_raw, sessional_prov_mapping, by = c("Department","Provider"))
