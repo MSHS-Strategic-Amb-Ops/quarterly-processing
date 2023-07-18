@@ -297,7 +297,7 @@ save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
 saveRDS(monthly_referral_vol, paste0(save_path,"monthly_referral_vol.rds"))
 
 rm(monthly_referral_vol)
-
+invisible(gc())
 ```
 
 
@@ -450,7 +450,7 @@ rm(waitTime_dist_site_group_office)
 rm(waitTime_mshs_group)
 rm(waitTime_site_group)
 rm(waitTime_site_group)
-
+invisible(gc())
 ```
 
 
@@ -612,7 +612,7 @@ rm(waitTime_dist_site_group_office_office)
 rm(waitTime_mshs_group_office)
 rm(waitTime_site_group_office)
 rm(waitTime_site_group_office)
-
+invisible(gc())
 ```
 
 
@@ -784,7 +784,7 @@ rm(waitTime_dist_site_group_office_ytd)
 rm(waitTime_mshs_group_ytd)
 rm(waitTime_site_group_ytd)
 rm(waitTime_site_group_ytd)
-
+invisible(gc())
 ```
 
 
@@ -967,7 +967,7 @@ rm(waitTime_dist_site_group_office_ytd)
 rm(waitTime_mshs_group_office_ytd)
 rm(waitTime_site_group_office_ytd)
 rm(waitTime_site_group_office_ytd)
-
+invisible(gc())
 ```
 
 
