@@ -142,6 +142,12 @@ scheduling_data_raw <- scheduling_data_raw %>%
          Appt.Made.WeekNum = as.numeric(strftime(Appt.Made.DTTM, format = "%V")),
          Session = ifelse(as.integer(sub(':.*', '', Time)) >= 12, 'PM', 'AM') )
 
+scheduling_data_raw <- scheduling_data_raw %>%
+  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
+                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
+                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
+                           TRUE ~ ">30"))
+
 ```
 
 
@@ -292,10 +298,6 @@ waitTime_dist_specialty <- scheduling_data_raw %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -307,10 +309,6 @@ waitTime_dist_site <- scheduling_data_raw %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -355,10 +353,6 @@ waitTime_dist_specialty_group <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -371,10 +365,6 @@ waitTime_dist_site_group <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -422,10 +412,6 @@ waitTime_dist_specialty_office <- scheduling_data_raw %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -438,10 +424,6 @@ waitTime_dist_site_office <- scheduling_data_raw %>%
   filter(Appt.Made.DateYear >= quarter_start & Appt.Made.DateYear < quarter_end) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -490,10 +472,6 @@ waitTime_dist_specialty_group_office <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -507,10 +485,6 @@ waitTime_dist_site_group_office <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.YearQtr, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.YearQtr, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -561,10 +535,6 @@ waitTime_dist_specialty_ytd <- scheduling_data_raw %>%
   filter(Appt.Made.MonNum < as.numeric(format(as.Date(quarter_end), "%m"))) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -578,10 +548,6 @@ waitTime_dist_site_ytd <- scheduling_data_raw %>%
   filter(Appt.Made.MonNum < as.numeric(format(as.Date(quarter_end), "%m"))) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -634,10 +600,6 @@ waitTime_dist_specialty_group_ytd <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -652,10 +614,6 @@ waitTime_dist_site_group_ytd <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -711,10 +669,6 @@ waitTime_dist_specialty_office_ytd <- scheduling_data_raw %>%
   filter(Appt.Made.MonNum < as.numeric(format(as.Date(quarter_end), "%m"))) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -729,10 +683,6 @@ waitTime_dist_site_office_ytd <- scheduling_data_raw %>%
   filter(Appt.Made.MonNum < as.numeric(format(as.Date(quarter_end), "%m"))) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Campus.Specialty.SubGroup, Site, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -789,10 +739,6 @@ waitTime_dist_specialty_group_office_ytd <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
@@ -808,10 +754,6 @@ waitTime_dist_site_group_office_ytd <- scheduling_data_raw %>%
   # filter(Campus %in% c("NYEE","MSB","NETWORK","MSM","MSH-MSDFP","ONCOLOGY","MSW","MSBI","MSUS","MSH- AMBULATORY CARE","MSDD")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.Year, New.PT2) %>%
   mutate(med_wait = median(Wait.Time, na.rm = TRUE)) %>%
-  mutate(group = case_when(Wait.Time >= 0 & Wait.Time <=7 ~ "0-7",
-                           Wait.Time >7 & Wait.Time <=14 ~ "8-14",
-                           Wait.Time >14 & Wait.Time <=30 ~ "15-30",
-                           TRUE ~ ">30")) %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.Year, New.PT2, Visit.Method, med_wait, group) %>%
   summarise(total = n())
 
