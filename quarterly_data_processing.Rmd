@@ -288,6 +288,19 @@ rm(referrals)
 ```
 
 
+```{r Save Output Data 1, echo = FALSE, warning = FALSE, message = FALSE}
+
+# save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
+save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
+
+# Referrals Tables -------------------------------------------------------------
+saveRDS(monthly_referral_vol, paste0(save_path,"monthly_referral_vol.rds"))
+
+rm(monthly_referral_vol)
+
+```
+
+
 ```{r Access Tables, echo = FALSE, warning = FALSE, message = FALSE}
 
 ## MSHS New Patient Wait Time Horizon ===============================================
@@ -397,6 +410,46 @@ waitTime_prov_group <- scheduling_data_raw %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.YearQtr, Provider, NPI) %>%
   summarise(med_wait = as.numeric(median(Wait.Time, na.rm = TRUE)))
 
+
+```
+
+
+```{r Save Output Data 2, echo = FALSE, warning = FALSE, message = FALSE}
+
+# save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
+save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
+
+# Access Tables (Quarter) ----------------------------------------------------------------
+# All Encounteres ------------------------------------------------------------------------
+## Wait Time Horizon by Specialty Group
+saveRDS(waitTime_dist_specialty, paste0(save_path,"waitTime_dist_specialty.rds"))
+saveRDS(waitTime_dist_site, paste0(save_path,"waitTime_dist_site.rds"))
+
+## Median Wait Time by Specialty Group
+saveRDS(waitTime_mshs, paste0(save_path,"waitTime_mshs.rds"))
+saveRDS(waitTime_site, paste0(save_path,"waitTime_site.rds")) 
+saveRDS(waitTime_prov, paste0(save_path,"waitTime_prov.rds")) 
+
+
+## Wait Time Horizon by Specialty Group and Subgroup
+saveRDS(waitTime_dist_specialty_group, paste0(save_path,"waitTime_dist_specialty_group.rds"))
+saveRDS(waitTime_dist_site_group, paste0(save_path,"waitTime_dist_site_group.rds"))
+
+## Median Wait Time by Specialty Group and Subgroup
+saveRDS(waitTime_mshs_group, paste0(save_path,"waitTime_mshs_group.rds"))
+saveRDS(waitTime_site_group, paste0(save_path,"waitTime_site_group.rds")) 
+saveRDS(waitTime_prov_group, paste0(save_path,"waitTime_prov_group.rds")) 
+
+rm(waitTime_dist_specialty)
+rm(waitTime_mshs)
+rm(waitTime_mshs)
+rm(waitTime_site)
+rm(waitTime_prov)
+rm(waitTime_dist_specialty_group)
+rm(waitTime_dist_site_group_office)
+rm(waitTime_mshs_group)
+rm(waitTime_site_group)
+rm(waitTime_site_group)
 
 ```
 
@@ -519,6 +572,46 @@ waitTime_prov_group_office <- scheduling_data_raw %>%
   filter(New.PT2 == "New") %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.YearQtr, Provider, NPI) %>%
   summarise(med_wait = as.numeric(median(Wait.Time, na.rm = TRUE)))
+
+```
+
+
+```{r Save Output Data 3, echo = FALSE, warning = FALSE, message = FALSE}
+
+# save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
+save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
+
+
+# Office Visits ------------------------------------------------------------------------
+## Wait Time Horizon by Specialty Group
+saveRDS(waitTime_dist_specialty_office, paste0(save_path,"waitTime_dist_specialty_office.rds"))
+saveRDS(waitTime_dist_site_office, paste0(save_path,"waitTime_dist_site_office.rds"))
+
+## Median Wait Time by Specialty Group
+saveRDS(waitTime_mshs_office, paste0(save_path,"waitTime_mshs_office.rds"))
+saveRDS(waitTime_site_office, paste0(save_path,"waitTime_site_office.rds"))
+saveRDS(waitTime_prov_office, paste0(save_path,"waitTime_prov_office.rds")) 
+
+
+## Wait Time Horizon by Specialty Group and Subgroup
+saveRDS(waitTime_dist_specialty_group_office, paste0(save_path,"waitTime_dist_specialty_group_office.rds"))
+saveRDS(waitTime_dist_site_group_office, paste0(save_path,"waitTime_dist_site_group_office.rds"))
+
+## Median Wait Time by Specialty Group and Subgroup
+saveRDS(waitTime_mshs_group_office, paste0(save_path,"waitTime_mshs_group_office.rds"))
+saveRDS(waitTime_site_group_office, paste0(save_path,"waitTime_site_group_office.rds"))
+saveRDS(waitTime_prov_group_office, paste0(save_path,"waitTime_prov_group_office.rds")) 
+
+rm(waitTime_dist_specialty_office)
+rm(waitTime_mshs_office)
+rm(waitTime_mshs_office)
+rm(waitTime_site_office)
+rm(waitTime_prov_office)
+rm(waitTime_dist_specialty_group_office)
+rm(waitTime_dist_site_group_office_office)
+rm(waitTime_mshs_group_office)
+rm(waitTime_site_group_office)
+rm(waitTime_site_group_office)
 
 ```
 
@@ -651,6 +744,46 @@ waitTime_prov_group_ytd <- scheduling_data_raw %>%
   filter(New.PT2 == "New") %>%
   group_by(Campus.Specialty.Group, Site, Appt.Made.Year, Provider, NPI) %>%
   summarise(med_wait = as.numeric(median(Wait.Time, na.rm = TRUE)))
+
+```
+
+
+```{r Save Output Data 4, echo = FALSE, warning = FALSE, message = FALSE}
+
+# save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
+save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
+
+
+# Access Tables (YTD) ----------------------------------------------------------------
+## Wait Time Horizon by Specialty Group
+saveRDS(waitTime_dist_specialty_ytd, paste0(save_path,"waitTime_dist_specialty_ytd.rds"))
+saveRDS(waitTime_dist_site_ytd, paste0(save_path,"waitTime_dist_site_ytd.rds"))
+
+## Median Wait Time by Specialty Group
+saveRDS(waitTime_mshs_ytd, paste0(save_path,"waitTime_mshs_ytd.rds"))
+saveRDS(waitTime_site_ytd, paste0(save_path,"waitTime_site_ytd.rds")) 
+saveRDS(waitTime_prov_ytd, paste0(save_path,"waitTime_prov_ytd.rds")) 
+
+
+## Wait Time Horizon by Specialty Group and Subgroup
+saveRDS(waitTime_dist_specialty_group_ytd, paste0(save_path,"waitTime_dist_specialty_group_ytd.rds"))
+saveRDS(waitTime_dist_site_group_ytd, paste0(save_path,"waitTime_dist_site_group_ytd.rds"))
+
+## Median Wait Time by Specialty Group and Subgroup
+saveRDS(waitTime_mshs_group_ytd, paste0(save_path,"waitTime_mshs_group_ytd.rds"))
+saveRDS(waitTime_site_group_ytd, paste0(save_path,"waitTime_site_group_ytd.rds")) 
+saveRDS(waitTime_prov_group_ytd, paste0(save_path,"waitTime_prov_group_ytd.rds")) 
+
+rm(waitTime_dist_specialty_ytd)
+rm(waitTime_dist_site_ytd)
+rm(waitTime_mshs_ytd)
+rm(waitTime_site_ytd)
+rm(waitTime_prov_ytd)
+rm(waitTime_dist_specialty_group_ytd)
+rm(waitTime_dist_site_group_office_ytd)
+rm(waitTime_mshs_group_ytd)
+rm(waitTime_site_group_ytd)
+rm(waitTime_site_group_ytd)
 
 ```
 
@@ -798,6 +931,46 @@ waitTime_prov_group_office_ytd <- scheduling_data_raw %>%
 ```
 
 
+```{r Save Output Data 5, echo = FALSE, warning = FALSE, message = FALSE}
+
+# save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
+save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
+
+
+# Office Visits ------------------------------------------------------------------------
+## Wait Time Horizon by Specialty Group
+saveRDS(waitTime_dist_specialty_office_ytd, paste0(save_path,"waitTime_dist_specialty_office_ytd.rds"))
+saveRDS(waitTime_dist_site_office_ytd, paste0(save_path,"waitTime_dist_site_office_ytd.rds"))
+
+## Median Wait Time by Specialty Group
+saveRDS(waitTime_mshs_office_ytd, paste0(save_path,"waitTime_mshs_office_ytd.rds"))
+saveRDS(waitTime_site_office_ytd, paste0(save_path,"waitTime_site_office_ytd.rds"))
+saveRDS(waitTime_prov_office_ytd, paste0(save_path,"waitTime_prov_office_ytd.rds")) 
+
+
+## Wait Time Horizon by Specialty Group and Subgroup
+saveRDS(waitTime_dist_specialty_group_office_ytd, paste0(save_path,"waitTime_dist_specialty_group_office_ytd.rds"))
+saveRDS(waitTime_dist_site_group_office_ytd, paste0(save_path,"waitTime_dist_site_group_office_ytd.rds"))
+
+## Median Wait Time by Specialty Group and Subgroup
+saveRDS(waitTime_mshs_group_office_ytd, paste0(save_path,"waitTime_mshs_group_office_ytd.rds"))
+saveRDS(waitTime_site_group_office_ytd, paste0(save_path,"waitTime_site_group_office_ytd.rds"))
+saveRDS(waitTime_prov_group_office_ytd, paste0(save_path,"waitTime_prov_group_office_ytd.rds")) 
+
+rm(waitTime_dist_specialty_office_ytd)
+rm(waitTime_dist_site_office_ytd)
+rm(waitTime_mshs_office_ytd)
+rm(waitTime_site_office_ytd)
+rm(waitTime_prov_office_ytd)
+rm(waitTime_dist_specialty_group_office_ytd)
+rm(waitTime_dist_site_group_office_ytd)
+rm(waitTime_mshs_group_office_ytd)
+rm(waitTime_site_group_office_ytd)
+rm(waitTime_site_group_office_ytd)
+
+```
+
+
 ```{r Volume Tables (All), echo = FALSE, warning = FALSE, message = FALSE}
 
 # Volume Tables ----------------------------------------------------------------
@@ -827,6 +1000,8 @@ monthly_vol <- monthly_vol %>%
   )
 
 ```
+
+
 ```{r Volume Validation, echo = FALSE, warning = FALSE, message = FALSE}
 
 # Volume Validation
@@ -964,13 +1139,10 @@ payer_mix_quarter_site_office <- scheduling_data_raw %>%
 ```
 
 
-```{r Local Output Data, echo = FALSE, warning = FALSE, message = FALSE}
+```{r Save Output Data 6, echo = FALSE, warning = FALSE, message = FALSE}
 
 # save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
 save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
-
-# Referrals Tables -------------------------------------------------------------
-saveRDS(monthly_referral_vol, paste0(save_path,"monthly_referral_vol.rds"))
 
 
 # Volume Tables ----------------------------------------------------------------
@@ -981,97 +1153,121 @@ saveRDS(monthly_vol_office, paste0(save_path,"monthly_vol_office.rds"))
 saveRDS(vol_zip_code, paste0(save_path,"vol_zip_code.rds"))
 saveRDS(vol_zip_code_office, paste0(save_path,"vol_zip_code_office.rds"))
 
-
-
-# Access Tables (Quarter) ----------------------------------------------------------------
-# All Encounteres ------------------------------------------------------------------------
-## Wait Time Horizon by Specialty Group
-saveRDS(waitTime_dist_specialty, paste0(save_path,"waitTime_dist_specialty.rds"))
-saveRDS(waitTime_dist_site, paste0(save_path,"waitTime_dist_site.rds"))
-
-## Median Wait Time by Specialty Group
-saveRDS(waitTime_mshs, paste0(save_path,"waitTime_mshs.rds"))
-saveRDS(waitTime_site, paste0(save_path,"waitTime_site.rds")) 
-saveRDS(waitTime_prov, paste0(save_path,"waitTime_prov.rds")) 
-
-
-## Wait Time Horizon by Specialty Group and Subgroup
-saveRDS(waitTime_dist_specialty_group, paste0(save_path,"waitTime_dist_specialty_group.rds"))
-saveRDS(waitTime_dist_site_group, paste0(save_path,"waitTime_dist_site_group.rds"))
-
-## Median Wait Time by Specialty Group and Subgroup
-saveRDS(waitTime_mshs_group, paste0(save_path,"waitTime_mshs_group.rds"))
-saveRDS(waitTime_site_group, paste0(save_path,"waitTime_site_group.rds")) 
-saveRDS(waitTime_prov_group, paste0(save_path,"waitTime_prov_group.rds")) 
-
-
-# Office Visits ------------------------------------------------------------------------
-## Wait Time Horizon by Specialty Group
-saveRDS(waitTime_dist_specialty_office, paste0(save_path,"waitTime_dist_specialty_office.rds"))
-saveRDS(waitTime_dist_site_office, paste0(save_path,"waitTime_dist_site_office.rds"))
-
-## Median Wait Time by Specialty Group
-saveRDS(waitTime_mshs_office, paste0(save_path,"waitTime_mshs_office.rds"))
-saveRDS(waitTime_site_office, paste0(save_path,"waitTime_site_office.rds"))
-saveRDS(waitTime_prov_office, paste0(save_path,"waitTime_prov_office.rds")) 
-
-
-## Wait Time Horizon by Specialty Group and Subgroup
-saveRDS(waitTime_dist_specialty_group_office, paste0(save_path,"waitTime_dist_specialty_group_office.rds"))
-saveRDS(waitTime_dist_site_group_office, paste0(save_path,"waitTime_dist_site_group_office.rds"))
-
-## Median Wait Time by Specialty Group and Subgroup
-saveRDS(waitTime_mshs_group_office, paste0(save_path,"waitTime_mshs_group_office.rds"))
-saveRDS(waitTime_site_group_office, paste0(save_path,"waitTime_site_group_office.rds"))
-saveRDS(waitTime_prov_group_office, paste0(save_path,"waitTime_prov_group_office.rds")) 
-
-
-
-# Access Tables (YTD) ----------------------------------------------------------------
-## Wait Time Horizon by Specialty Group
-saveRDS(waitTime_dist_specialty_ytd, paste0(save_path,"waitTime_dist_specialty_ytd.rds"))
-saveRDS(waitTime_dist_site_ytd, paste0(save_path,"waitTime_dist_site_ytd.rds"))
-
-## Median Wait Time by Specialty Group
-saveRDS(waitTime_mshs_ytd, paste0(save_path,"waitTime_mshs_ytd.rds"))
-saveRDS(waitTime_site_ytd, paste0(save_path,"waitTime_site_ytd.rds")) 
-saveRDS(waitTime_prov_ytd, paste0(save_path,"waitTime_prov_ytd.rds")) 
-
-
-## Wait Time Horizon by Specialty Group and Subgroup
-saveRDS(waitTime_dist_specialty_group_ytd, paste0(save_path,"waitTime_dist_specialty_group_ytd.rds"))
-saveRDS(waitTime_dist_site_group_ytd, paste0(save_path,"waitTime_dist_site_group_ytd.rds"))
-
-## Median Wait Time by Specialty Group and Subgroup
-saveRDS(waitTime_mshs_group_ytd, paste0(save_path,"waitTime_mshs_group_ytd.rds"))
-saveRDS(waitTime_site_group_ytd, paste0(save_path,"waitTime_site_group_ytd.rds")) 
-saveRDS(waitTime_prov_group_ytd, paste0(save_path,"waitTime_prov_group_ytd.rds")) 
-
-
-# Office Visits ------------------------------------------------------------------------
-## Wait Time Horizon by Specialty Group
-saveRDS(waitTime_dist_specialty_office_ytd, paste0(save_path,"waitTime_dist_specialty_office_ytd.rds"))
-saveRDS(waitTime_dist_site_office_ytd, paste0(save_path,"waitTime_dist_site_office_ytd.rds"))
-
-## Median Wait Time by Specialty Group
-saveRDS(waitTime_mshs_office_ytd, paste0(save_path,"waitTime_mshs_office_ytd.rds"))
-saveRDS(waitTime_site_office_ytd, paste0(save_path,"waitTime_site_office_ytd.rds"))
-saveRDS(waitTime_prov_office_ytd, paste0(save_path,"waitTime_prov_office_ytd.rds")) 
-
-
-## Wait Time Horizon by Specialty Group and Subgroup
-saveRDS(waitTime_dist_specialty_group_office_ytd, paste0(save_path,"waitTime_dist_specialty_group_office_ytd.rds"))
-saveRDS(waitTime_dist_site_group_office_ytd, paste0(save_path,"waitTime_dist_site_group_office_ytd.rds"))
-
-## Median Wait Time by Specialty Group and Subgroup
-saveRDS(waitTime_mshs_group_office_ytd, paste0(save_path,"waitTime_mshs_group_office_ytd.rds"))
-saveRDS(waitTime_site_group_office_ytd, paste0(save_path,"waitTime_site_group_office_ytd.rds"))
-saveRDS(waitTime_prov_group_office_ytd, paste0(save_path,"waitTime_prov_group_office_ytd.rds")) 
-
-
-
 # Payor Mix Table --------------------------------------------------------------
 saveRDS(payer_mix_quarter_site, paste0(save_path,"payer_mix_quarter_site.rds"))
 saveRDS(payer_mix_quarter_site_office, paste0(save_path,"payer_mix_quarter_site_office.rds"))
+
+```
+
+
+```{r Local Output Data, echo = FALSE, warning = FALSE, message = FALSE}
+
+# # save_path <- "C:/Users/kweons01/Desktop/Strategic Initiatives - So Youn/Github/quarterly-processing/Quarterly_Data/YTD 2023/"
+# save_path <- "/nfs/data/Applications/Ambulatory/Quarterly_Data/"
+# 
+# # Referrals Tables -------------------------------------------------------------
+# saveRDS(monthly_referral_vol, paste0(save_path,"monthly_referral_vol.rds"))
+# 
+# 
+# # Volume Tables ----------------------------------------------------------------
+# ## Arrived monthly volume ======================================================
+# saveRDS(monthly_vol, paste0(save_path,"monthly_vol.rds"))
+# saveRDS(monthly_vol_office, paste0(save_path,"monthly_vol_office.rds"))
+# ## Arrived Epic department quarterly volume ====================================
+# saveRDS(vol_zip_code, paste0(save_path,"vol_zip_code.rds"))
+# saveRDS(vol_zip_code_office, paste0(save_path,"vol_zip_code_office.rds"))
+# 
+# 
+# 
+# # Access Tables (Quarter) ----------------------------------------------------------------
+# # All Encounteres ------------------------------------------------------------------------
+# ## Wait Time Horizon by Specialty Group
+# saveRDS(waitTime_dist_specialty, paste0(save_path,"waitTime_dist_specialty.rds"))
+# saveRDS(waitTime_dist_site, paste0(save_path,"waitTime_dist_site.rds"))
+# 
+# ## Median Wait Time by Specialty Group
+# saveRDS(waitTime_mshs, paste0(save_path,"waitTime_mshs.rds"))
+# saveRDS(waitTime_site, paste0(save_path,"waitTime_site.rds")) 
+# saveRDS(waitTime_prov, paste0(save_path,"waitTime_prov.rds")) 
+# 
+# 
+# ## Wait Time Horizon by Specialty Group and Subgroup
+# saveRDS(waitTime_dist_specialty_group, paste0(save_path,"waitTime_dist_specialty_group.rds"))
+# saveRDS(waitTime_dist_site_group, paste0(save_path,"waitTime_dist_site_group.rds"))
+# 
+# ## Median Wait Time by Specialty Group and Subgroup
+# saveRDS(waitTime_mshs_group, paste0(save_path,"waitTime_mshs_group.rds"))
+# saveRDS(waitTime_site_group, paste0(save_path,"waitTime_site_group.rds")) 
+# saveRDS(waitTime_prov_group, paste0(save_path,"waitTime_prov_group.rds")) 
+# 
+# 
+# # Office Visits ------------------------------------------------------------------------
+# ## Wait Time Horizon by Specialty Group
+# saveRDS(waitTime_dist_specialty_office, paste0(save_path,"waitTime_dist_specialty_office.rds"))
+# saveRDS(waitTime_dist_site_office, paste0(save_path,"waitTime_dist_site_office.rds"))
+# 
+# ## Median Wait Time by Specialty Group
+# saveRDS(waitTime_mshs_office, paste0(save_path,"waitTime_mshs_office.rds"))
+# saveRDS(waitTime_site_office, paste0(save_path,"waitTime_site_office.rds"))
+# saveRDS(waitTime_prov_office, paste0(save_path,"waitTime_prov_office.rds")) 
+# 
+# 
+# ## Wait Time Horizon by Specialty Group and Subgroup
+# saveRDS(waitTime_dist_specialty_group_office, paste0(save_path,"waitTime_dist_specialty_group_office.rds"))
+# saveRDS(waitTime_dist_site_group_office, paste0(save_path,"waitTime_dist_site_group_office.rds"))
+# 
+# ## Median Wait Time by Specialty Group and Subgroup
+# saveRDS(waitTime_mshs_group_office, paste0(save_path,"waitTime_mshs_group_office.rds"))
+# saveRDS(waitTime_site_group_office, paste0(save_path,"waitTime_site_group_office.rds"))
+# saveRDS(waitTime_prov_group_office, paste0(save_path,"waitTime_prov_group_office.rds")) 
+# 
+# 
+# 
+# # Access Tables (YTD) ----------------------------------------------------------------
+# ## Wait Time Horizon by Specialty Group
+# saveRDS(waitTime_dist_specialty_ytd, paste0(save_path,"waitTime_dist_specialty_ytd.rds"))
+# saveRDS(waitTime_dist_site_ytd, paste0(save_path,"waitTime_dist_site_ytd.rds"))
+# 
+# ## Median Wait Time by Specialty Group
+# saveRDS(waitTime_mshs_ytd, paste0(save_path,"waitTime_mshs_ytd.rds"))
+# saveRDS(waitTime_site_ytd, paste0(save_path,"waitTime_site_ytd.rds")) 
+# saveRDS(waitTime_prov_ytd, paste0(save_path,"waitTime_prov_ytd.rds")) 
+# 
+# 
+# ## Wait Time Horizon by Specialty Group and Subgroup
+# saveRDS(waitTime_dist_specialty_group_ytd, paste0(save_path,"waitTime_dist_specialty_group_ytd.rds"))
+# saveRDS(waitTime_dist_site_group_ytd, paste0(save_path,"waitTime_dist_site_group_ytd.rds"))
+# 
+# ## Median Wait Time by Specialty Group and Subgroup
+# saveRDS(waitTime_mshs_group_ytd, paste0(save_path,"waitTime_mshs_group_ytd.rds"))
+# saveRDS(waitTime_site_group_ytd, paste0(save_path,"waitTime_site_group_ytd.rds")) 
+# saveRDS(waitTime_prov_group_ytd, paste0(save_path,"waitTime_prov_group_ytd.rds")) 
+# 
+# 
+# # Office Visits ------------------------------------------------------------------------
+# ## Wait Time Horizon by Specialty Group
+# saveRDS(waitTime_dist_specialty_office_ytd, paste0(save_path,"waitTime_dist_specialty_office_ytd.rds"))
+# saveRDS(waitTime_dist_site_office_ytd, paste0(save_path,"waitTime_dist_site_office_ytd.rds"))
+# 
+# ## Median Wait Time by Specialty Group
+# saveRDS(waitTime_mshs_office_ytd, paste0(save_path,"waitTime_mshs_office_ytd.rds"))
+# saveRDS(waitTime_site_office_ytd, paste0(save_path,"waitTime_site_office_ytd.rds"))
+# saveRDS(waitTime_prov_office_ytd, paste0(save_path,"waitTime_prov_office_ytd.rds")) 
+# 
+# 
+# ## Wait Time Horizon by Specialty Group and Subgroup
+# saveRDS(waitTime_dist_specialty_group_office_ytd, paste0(save_path,"waitTime_dist_specialty_group_office_ytd.rds"))
+# saveRDS(waitTime_dist_site_group_office_ytd, paste0(save_path,"waitTime_dist_site_group_office_ytd.rds"))
+# 
+# ## Median Wait Time by Specialty Group and Subgroup
+# saveRDS(waitTime_mshs_group_office_ytd, paste0(save_path,"waitTime_mshs_group_office_ytd.rds"))
+# saveRDS(waitTime_site_group_office_ytd, paste0(save_path,"waitTime_site_group_office_ytd.rds"))
+# saveRDS(waitTime_prov_group_office_ytd, paste0(save_path,"waitTime_prov_group_office_ytd.rds")) 
+# 
+# 
+# 
+# # Payor Mix Table --------------------------------------------------------------
+# saveRDS(payer_mix_quarter_site, paste0(save_path,"payer_mix_quarter_site.rds"))
+# saveRDS(payer_mix_quarter_site_office, paste0(save_path,"payer_mix_quarter_site_office.rds"))
 ```
 
